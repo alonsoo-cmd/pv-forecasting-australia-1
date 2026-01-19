@@ -45,6 +45,10 @@ def load_trained_model(checkpoint_path, device, input_size):
     model_name = checkpoint["model_name"]
     cfg = checkpoint["config"]["model"]
 
+    if checkpoint_path.endswith("best_model_LSTM_FCN.pt") and cfg["hidden_size"] == 128:
+        print("⚠️ Detectada inconsistencia en config: Forzando hidden_size a 96")
+        cfg["hidden_size"] = 96
+
     # Reconstruir parámetros del modelo
     if model_name in ["LSTM", "GRU"]:
         model_params = {
