@@ -398,6 +398,18 @@ def pipeline():
     x_df = preparar_x_df(x_df)
     y_df = preparar_y_df(y_df)
 
+    # ==================================================
+    # ============ MASE SCALE (SERIE REAL) ==============
+    # ==================================================
+    y_energy_real = y_df["Energy"].values
+
+    m = 24  # estacionalidad diaria (horaria)
+    naive_diff = np.abs(y_energy_real[m:] - y_energy_real[:-m])
+    mase_scale = np.mean(naive_diff)
+
+    print(f"MASE scale (real series): {mase_scale:.4f}")
+
+
     # alinear por tiempo
     x_df, y_df = x_df.align(y_df, join="inner", axis=0)
 
@@ -473,21 +485,23 @@ def pipeline():
     mase_scale = np.mean(naive_diff)
 
     stats = {
-        "X": {
-            "numeric_cols": x_cols,
-            "mu": x_mu,
-            "std": x_std,
-        },
-        "Y": {
-            "numeric_cols": y_cols,
-            "mu": y_mu,
-            "std": y_std,
-        },
-        "mase": {
-            "scale": mase_scale,
-            "m": m,
-        },
+    "X": {
+        "numeric_cols": x_cols,
+        "mu": x_mu,
+        "std": x_std,
+    },
+    "Y": {
+        "numeric_cols": y_cols,
+        "mu": y_mu,
+        "std": y_std,
+    },
+    "mase": {
+        "scale": mase_scale,
+        "m": m,
+    },
+    
     }
+
 
     with open(OUT_DIR / "stats.pkl", "wb") as f:
         pickle.dump(stats, f)
