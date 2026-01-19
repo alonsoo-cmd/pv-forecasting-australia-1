@@ -10,7 +10,7 @@ import torch.nn as nn
 from models.LSTM import LSTM_two_layers
 from models.GRU import GRU_two_layers
 from models.LSTM_FCN import LSTM_FCN
-from models.TransformerForecast import TransformerForecast
+from models.Transformer import TransformerForecast
 
 from utils.metrics import rmse, mase
 
@@ -72,9 +72,18 @@ def evaluate(model, dataloader, device):
 
 def load_split(name, base):
     df = pd.read_excel(Path(base) / f"{name}.xlsx", index_col=0)
+
+    X_df = df.drop(columns=["Energy"])
     y = df["Energy"].to_numpy(dtype=np.float32)
-    X = df.drop(columns=["Energy"]).to_numpy(dtype=np.float32)
-    return X, y
+    X = X_df.to_numpy(dtype=np.float32)
+
+    feature_columns = X_df.columns.tolist()
+
+    # SAFETY CHECK (MUY IMPORTANTE)
+    assert "Energy" not in feature_columns, "Energy leaked into feature_columns"
+
+    return X, y, feature_columns
+
 
 
 def main():
@@ -82,9 +91,10 @@ def main():
         cfg = yaml.safe_load(f)["model"]
 
     device = "cuda" if torch.cuda.is_available() else "cpu"
-
-    train_x, train_y = load_split("train", "data/Processed")
-    val_x, val_y = load_split("val", "data/Processed")
+    
+    train_x, train_y, feature_columns = load_split("train", "data/Processed")
+    val_x, val_y, feature_columns = load_split("val", "data/Processed")
+    input_size = train_x.shape[1]
 
     ds_train = TimeSeriesDataset(train_x, train_y, cfg["length"], cfg["lag"], cfg["output_window"])
     ds_val = TimeSeriesDataset(val_x, val_y, cfg["length"], cfg["lag"], cfg["output_window"], stride=24)
@@ -93,15 +103,16 @@ def main():
     dl_val = DataLoader(ds_val, batch_size=cfg["batch_size"], shuffle=False)
 
     models = {
-        "LSTM": LSTM_two_layers(cfg["input_size"], cfg["hidden_size"], cfg["output_size"], cfg["dropout"]),
-        "GRU": GRU_two_layers(cfg["input_size"], cfg["hidden_size"], cfg["output_size"], cfg["dropout"]),
-        "LSTM_FCN": LSTM_FCN(cfg["input_size"], cfg["hidden_size"], cfg["output_window"], cfg["dropout"]),
-        "Transformer": TransformerForecast(cfg["input_size"], 128, 8, 4, 256, cfg["dropout"], cfg["output_window"]),
+        "LSTM": LSTM_two_layers(input_size, cfg["hidden_size"], cfg["output_size"], cfg["dropout"]),
+        "GRU": GRU_two_layers(input_size, cfg["hidden_size"], cfg["output_size"], cfg["dropout"]),
+        "LSTM_FCN": LSTM_FCN(input_size, cfg["hidden_size"], cfg["output_window"], cfg["dropout"]),
+        "Transformer": TransformerForecast(input_size, 128, 8, 4, 256, cfg["dropout"], cfg["output_window"]),
     }
 
     best_mase = np.inf
 
     for name, model in models.items():
+        print(f"Training: {name}")
         train_model(model, dl_train, cfg["epochs"], cfg["learning_rate"], device)
         p, t = evaluate(model, dl_val, device)
 
@@ -111,11 +122,20 @@ def main():
         if m < best_mase:
             best_mase = m
             torch.save(
-                {"model_name": name, "state_dict": model.state_dict()},
+                {
+                    "model_name": name,
+                    "state_dict": model.state_dict(),
+                    "feature_columns": feature_columns,
+                    "input_size": len(feature_columns),
+                    "best_mase": best_mase,
+                },
                 "best_model.pth",
             )
 
-    print("🏆 Best model saved")
+            best_model = name
+
+
+    print("Best model saved", best_model)
 
 
 if __name__ == "__main__":

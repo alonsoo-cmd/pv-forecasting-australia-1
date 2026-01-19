@@ -10,6 +10,18 @@ ruta_y = "../data/Raw/pv_dataset_full.xlsx"
 ruta_x = "../data/Raw/wx_dataset_full.xlsx"
 OUT_DIR = Path("../data/Processed")
 
+def normalizar_dt_df(df, col=None):
+    df = df.copy()
+
+    if col is None:
+        df.index = pd.to_datetime(df.index, errors="coerce").floor("min")
+        df = df[~df.index.isna()]
+    else:
+        df[col] = pd.to_datetime(df[col], errors="coerce").dt.floor("min")
+        df = df.dropna(subset=[col]).set_index(col)
+
+    return df
+
 
 def cargar_excel(ruta: str, hoja: str | int = 0):
     return pd.read_excel(ruta, sheet_name=hoja)
@@ -351,22 +363,34 @@ def pipeline_training():
     print("Val:", val.shape)
     print("Test:", test.shape)
 
-def pipeline_final_data():
+def pipeline_inference():
     x_df_2 = cargar_excel(ruta_x, hoja=2)
     y_df_2 = cargar_excel(ruta_y, hoja=2)
     # preparar por separado
-    x_df = preparar_x_df(x_df_2)
-    y_df = preparar_y_df(y_df_2)
+    x_df_inference = preparar_x_df(x_df_2)
+    y_df_inference = preparar_y_df(y_df_2)
+    
+    x_df_inference = normalizar_dt_df(x_df_inference)
+    y_df_inference = normalizar_dt_df(y_df_inference)
 
+    # ALINEAR DE VERDAD
+    x_df_inference, y_df_inference = x_df_inference.align(
+        y_df_inference,
+        join="inner",
+        axis=0,
+    )
+    # comprobación (opcional pero recomendable)
+    assert x_df_inference.index.equals(y_df_inference.index)
     # alinear por tiempo
-    x_df_inference, y_df_inference = x_df.align(y_df, join="inner", axis=0)
+    #x_df_inference, y_df_inference = x_df.align(y_df, join="inner", axis=0)
     inference = unir_x_y(x_df_inference, y_df_inference, y_col="Energy")
     # guardar conjuntos
+    inference.drop(columns=["Energy"])
     inference.to_excel(OUT_DIR/ "inference.xlsx", index=True)
 
 def main():
     pipeline_training()
-    pipeline_final_data()
+    pipeline_inference()
 
 
 
