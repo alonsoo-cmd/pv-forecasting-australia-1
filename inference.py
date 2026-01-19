@@ -128,6 +128,19 @@ def main():
         torch.tensor(targets[:, 0]),
     ).item()
 
+
+    # Guardar checkpoint (ej: al final o cuando sea el mejor)
+    torch.save(
+        {
+            "model_name": "LSTM",  # o "GRU", "Transformer", etc.
+            "input_size": input_size,
+            "state_dict": model.state_dict(),
+        },
+        "best_model.pth"
+    )
+    print("Guardado best_model.pth")
+
+
     print("\n================ METRICS (ALL DATA) ================")
     print(f"RMSE  : {rmse_all:.4f}")
     print(f"MASE  : {mase_all:.4f}")

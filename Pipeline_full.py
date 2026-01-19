@@ -97,7 +97,7 @@ def main():
     
     # Hiperparámetros (puedes cargarlos de tu yaml)
     cfg = {
-        "length": 168, "lag": 0, "output_window": 24, "batch_size": 32,
+        "length": 72, "lag": 0, "output_window": 24, "batch_size": 32,
         "epochs": 50, "learning_rate": 1e-3, "hidden_size": 128, "dropout": 0.2
     }
 
