@@ -102,14 +102,14 @@ def inference_model(model, dataloader, device):
 def run_inference():
     device = "cuda" if torch.cuda.is_available() else "cpu"
     print("Using device:", device)
-    inf_x, inf_y = Pipeline.load_split("inference", DATA_PATH)
-    input_size = inf_x.shape[1]
+    
     # --------------------------------------------------
     # PATHS
     # --------------------------------------------------
     CHECKPOINT_PATH = "./checkpoints/best_model_LSTM_FCN.pt"  # ⬅️ ajusta si hace falta
     DATA_PATH = "./data/Processed"
-
+    inf_x, inf_y = Pipeline.load_split("inference", DATA_PATH)
+    input_size = inf_x.shape[1]
     # --------------------------------------------------
     # LOAD MODEL
     # --------------------------------------------------
