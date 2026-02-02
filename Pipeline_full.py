@@ -148,8 +148,13 @@ def main():
     p_inf, t_inf = evaluate_engine(model, dl_inf, device)
     p_inf_real, t_inf_real = np.expm1(p_inf), np.expm1(t_inf)
 
+    # Seleccionamos el primer ejemplo de la inferencia y lo aplanamos
+    # para asegurar que sean arrays de 1D (24 puntos)
+    target_plot = t_inf_real[0].flatten()
+    pred_plot = p_inf_real[0].flatten()
+
     # Graficar un ejemplo de la inferencia
-    plot_one_day(t_inf_real, p_inf_real, day_idx=0)
+    plot_one_day(target_plot, pred_plot, day_idx=0)
     print("Inferencia completada y gráfico generado.")
 
 if __name__ == "__main__":
