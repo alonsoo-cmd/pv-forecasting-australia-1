@@ -182,9 +182,15 @@ def run_inference():
     print(f"MASE horizon=0: {mase_h0:.4f}")
     print(f"RMSE horizon=0: {rmse_h0:.4f} kWh")
     
-    # --- PLOTS ---
-    # Aseguramos que pasamos los primeros 24 puntos aplanados para plot_one_day
-    plot_one_day(targets_real[0].flatten(), preds_real[0].flatten(), day_idx=10)
+    # --- PLOTS CORREGIDOS ---
+    # En lugar de [0], tomamos una tajada de 24 horas para representar un día
+    dia_real = targets_real[0:24].flatten()
+    dia_pred = preds_real[0:24].flatten()
+    
+    if len(dia_real) == 24:
+        plot_one_day(dia_real, dia_pred, day_idx=10)
+    else:
+        print("No hay suficientes datos para graficar 24h")
     
     plot_continuous_horizon0(targets_real, preds_real, start_idx=0, n_days=7)
     plot_scatter_real_vs_pred(targets_real, preds_real)
