@@ -133,26 +133,38 @@ def eliminar_fechas_invalidas(x_df, col):
 
 def extraer_features_circulares(df, col_dt="dt_iso"):
     """
-    Mantengo tus fórmulas.
-    Asume col_dt datetime64 (tz-aware o naive).
+    Extrae características cíclicas. 
+    Si col_dt es None o no está en las columnas, usa el índice del DataFrame.
     """
     df = df.copy()
-    dt = df[col_dt]
 
-    df["hour"] = dt.dt.hour
-    df["month"] = dt.dt.month
-    df["weekday"] = dt.dt.weekday
+    # 1. Lógica de selección de la fuente de tiempo
+    if col_dt is not None and col_dt in df.columns:
+        # Si la columna existe, la usamos
+        dt_series = df[col_dt].dt
+    else:
+        # Si col_dt es None o ya se movió al índice, usamos el índice
+        # Nos aseguramos de que el índice sea de tipo Datetime
+        if not pd.api.types.is_datetime64_any_dtype(df.index):
+            df.index = pd.to_datetime(df.index)
+        dt_series = df.index
 
-    df["hour_sin"] = np.sin(2*np.pi*df["hour"]/24)
-    df["hour_cos"] = np.cos(2*np.pi*df["hour"]/24)
+    # 2. Extraer componentes usando la serie identificada
+    hour = dt_series.hour
+    month = dt_series.month
+    weekday = dt_series.weekday
 
-    df["month_sin"] = np.sin(2*np.pi*(df["month"]-1)/12)
-    df["month_cos"] = np.cos(2*np.pi*(df["month"]-1)/12)
+    # 3. Cálculos circulares
+    df["hour_sin"] = np.sin(2 * np.pi * hour / 24)
+    df["hour_cos"] = np.cos(2 * np.pi * hour / 24)
 
-    df["weekday_sin"] = np.sin(2*np.pi*df["weekday"]/7)
-    df["weekday_cos"] = np.cos(2*np.pi*df["weekday"]/7)
+    df["month_sin"] = np.sin(2 * np.pi * (month - 1) / 12)
+    df["month_cos"] = np.cos(2 * np.pi * (month - 1) / 12)
 
-    df = df.drop(columns=["hour", "month", "weekday"])
+    df["weekday_sin"] = np.sin(2 * np.pi * weekday / 7)
+    df["weekday_cos"] = np.cos(2 * np.pi * weekday / 7)
+
+    # Nota: Ya no borramos columnas temporales porque no las creamos en el DF
     return df
 
 
