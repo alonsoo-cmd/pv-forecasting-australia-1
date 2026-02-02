@@ -151,6 +151,7 @@ def main():
 
     target_plot = t_inf_real.flatten()[:24]
     pred_plot = p_inf_real.flatten()[:24]
+    print("Generando gráfico para el primer día de inferencia...")
 
     # Verificación de seguridad antes de graficar
     if len(target_plot) == 24 and len(pred_plot) == 24:
