@@ -85,8 +85,11 @@ def train_model(model, dataloader, epochs, lr, device):
             optimizer.zero_grad()
             preds = model(x)
 
-            if preds.shape != y.shape:
-                preds = preds.squeeze(-1)
+            if preds.ndim == 3:
+                preds = preds.squeeze(-1) # Ajustar si la salida tiene dimensión extra
+
+            if y.ndim == 3:
+                y = y.squeeze(-1) # Ajustar si la salida tiene dimensión extra
 
             loss = loss_fn(preds, y)
             loss.backward()
@@ -106,6 +109,13 @@ def evaluate(model, dataloader, device):
         for x, y in dataloader:
             x = x.to(device)
             out = model(x).cpu().numpy()
+
+            # Consistencia de dimensiones en evaluación
+            if out.ndim == 3:
+                out = out.squeeze(-1)
+            if y.ndim == 3:
+                y = y.squeeze(-1)
+
             preds.append(out)
             targets.append(y.numpy())
 
