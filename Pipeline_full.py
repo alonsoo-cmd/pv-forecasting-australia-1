@@ -68,8 +68,17 @@ def evaluate_engine(model, dataloader, device):
     with torch.no_grad():
         for x, y in dataloader:
             out = model(x.to(device)).detach().cpu().numpy()
+            # Si la salida es (Batch, Window, 1), la convertimos a (Batch, Window)
+            if out.ndim == 3:
+                out = out.squeeze(-1)
+            
+            y_np = y.numpy()
+            if y_np.ndim == 3:
+                y_np = y_np.squeeze(-1)
+                
             preds.append(out)
-            targets.append(y.numpy())
+            targets.append(y_np)
+            
     return np.concatenate(preds), np.concatenate(targets)
 
 # ======================================================
@@ -148,12 +157,12 @@ def main():
     p_inf, t_inf = evaluate_engine(model, dl_inf, device)
     p_inf_real, t_inf_real = np.expm1(p_inf), np.expm1(t_inf)
 
-    # Seleccionamos el primer ejemplo de la inferencia y lo aplanamos
-    # para asegurar que sean arrays de 1D (24 puntos)
-    target_plot = t_inf_real[0].flatten()
-    pred_plot = p_inf_real[0].flatten()
+    # Forzamos la conversión a 1D seleccionando el primer elemento del lote
+    # y eliminando cualquier dimensión extra singleton.
+    target_plot = np.atleast_1d(t_inf_real[0]).reshape(-1)
+    pred_plot = np.atleast_1d(p_inf_real[0]).reshape(-1)
 
-    # Graficar un ejemplo de la inferencia
+    # Ahora la función recibirá dos vectores limpios de 24 elementos
     plot_one_day(target_plot, pred_plot, day_idx=0)
     print("Inferencia completada y gráfico generado.")
 
