@@ -211,6 +211,11 @@ def anadir_posicion_solar(df, lat=40.4168, lon=-3.7038):
     Calcula la elevación y azimut solar basado en el índice temporal.
     """
     df = df.copy()
+
+    if df.index.duplicated().any():
+        print(f"⚠️ Se detectaron {df.index.duplicated().sum()} filas duplicadas. Eliminando...")
+        df = df[~df.index.duplicated(keep='first')]
+
     # Asegurarse de que el índice es DatetimeIndex y tiene TZ
     # Si no tiene, localizamos (ajusta a tu zona horaria local)
     if df.index.tz is None:

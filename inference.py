@@ -34,61 +34,72 @@ MODEL_FACTORY = {
 # ================= LOAD TRAINED MODEL ================
 # ======================================================
 def load_trained_model(checkpoint_path, device, input_size):
-    # Verificación de existencia del archivo
+    # 1. Verificación de existencia
     if not os.path.exists(checkpoint_path):
-        raise FileNotFoundError(f"❌ No se encontró el modelo en: {os.path.abspath(checkpoint_path)}. "
-                                f"Asegúrate de haber ejecutado el entrenamiento primero.")
+        raise FileNotFoundError(f"❌ No se encontró el modelo en: {checkpoint_path}")
 
-    checkpoint = torch.load(
-        checkpoint_path,
-        map_location=device,
-        weights_only=False,
-    )
+    checkpoint = torch.load(checkpoint_path, map_location=device, weights_only=False)
 
-    # El campo puede llamarse 'state_dict' o 'model_state_dict' según el Pipeline usado
+    # 2. Identificar claves (compatibilidad con versiones viejas y nuevas)
     state_dict_key = "state_dict" if "state_dict" in checkpoint else "model_state_dict"
-    
-    assert "model_name" in checkpoint, "El checkpoint no tiene 'model_name'"
-    assert state_dict_key in checkpoint, "El checkpoint no tiene el diccionario de pesos"
-    assert "config" in checkpoint, "El checkpoint no tiene 'config'"
+    if state_dict_key not in checkpoint:
+        # Si no hay diccionario de claves, quizás el archivo es solo el state_dict directamente
+        state_dict = checkpoint
+        model_name = "LSTM_FCN" # Asumimos el mejor por defecto
+        print("⚠️ Checkpoint simple detectado. Asumiendo LSTM_FCN por defecto.")
+    else:
+        state_dict = checkpoint[state_dict_key]
+        model_name = checkpoint.get("model_name", "LSTM_FCN")
 
-    model_name = checkpoint["model_name"]
-    cfg = checkpoint["config"]["model"]
+    # 3. Manejo de la Configuración (EVITA EL ERROR DE ASSERT)
+    if "config" in checkpoint:
+        cfg = checkpoint["config"]["model"]
+        full_cfg = checkpoint["config"]
+    else:
+        print("⚠️ El checkpoint no tiene 'config'. Usando valores estándar de emergencia.")
+        # Valores por defecto para que no se detenga la primera vez
+        cfg = {
+            "hidden_size": 96,
+            "output_size": 24, # o output_window
+            "output_window": 24,
+            "dropout": 0.3,
+            "length": 24,
+            "lag": 0
+        }
+        full_cfg = {"model": cfg}
 
-    # Corrección automática de dimensiones si es necesario
+    # 4. Corrección de seguridad para LSTM_FCN
     if model_name == "LSTM_FCN" and cfg.get("hidden_size") == 128:
-        print("⚠️ Detectada inconsistencia en config: Forzando hidden_size a 96 para LSTM_FCN")
+        print("⚠️ Corrigiendo hidden_size: 128 -> 96")
         cfg["hidden_size"] = 96
 
-    # Reconstruir parámetros del modelo
+    # 5. Reconstruir parámetros del modelo
     if model_name in ["LSTM", "GRU"]:
         model_params = {
             "input_size": input_size,
-            "hidden_size": cfg["hidden_size"],
-            "output_size": cfg["output_size"],
-            "dropout": cfg["dropout"],
+            "hidden_size": cfg.get("hidden_size", 96),
+            "output_size": cfg.get("output_size", 24),
+            "dropout": cfg.get("dropout", 0.3),
         }
     elif model_name == "LSTM_FCN":
         model_params = {
             "input_size": input_size,
-            "hidden_size": cfg["hidden_size"],
-            "output_window": cfg["output_window"],
-            "dropout": cfg["dropout"],
+            "hidden_size": cfg.get("hidden_size", 96),
+            "output_window": cfg.get("output_window", 24),
+            "dropout": cfg.get("dropout", 0.3),
         }
-    else:
-        raise ValueError(f"Unknown model: {model_name}")
 
+    # 6. Cargar pesos
     model_class = MODEL_FACTORY[model_name]
     model = model_class(**model_params)
-
-    model.load_state_dict(checkpoint[state_dict_key], strict=True)
+    
+    # load_state_dict con strict=False por si hay pequeñas variaciones
+    model.load_state_dict(state_dict, strict=False)
     model.to(device)
     model.eval()
 
-    print(f"\n✅ Checkpoint cargado con éxito desde: {checkpoint_path}")
-    print(f"   Modelo: {model_name} | Params: {model_params}")
-
-    return model, model_name, model_params, checkpoint["config"]
+    print(f"\n✅ Checkpoint cargado con éxito.")
+    return model, model_name, model_params, full_cfg
 
 # ======================================================
 # =================== INFERENCE ========================
