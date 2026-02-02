@@ -68,17 +68,9 @@ def evaluate_engine(model, dataloader, device):
     with torch.no_grad():
         for x, y in dataloader:
             out = model(x.to(device)).detach().cpu().numpy()
-            # Si la salida es (Batch, Window, 1), la convertimos a (Batch, Window)
-            if out.ndim == 3:
-                out = out.squeeze(-1)
-            
-            y_np = y.numpy()
-            if y_np.ndim == 3:
-                y_np = y_np.squeeze(-1)
-
-            preds.append(out)
-            targets.append(y_np)
-            
+            # Elimina dimensiones de tamaño 1 (ej: de [1, 24, 1] a [1, 24])
+            preds.append(out.squeeze())
+            targets.append(y.numpy().squeeze())
     return np.concatenate(preds), np.concatenate(targets)
 
 # ======================================================
@@ -157,17 +149,15 @@ def main():
     p_inf, t_inf = evaluate_engine(model, dl_inf, device)
     p_inf_real, t_inf_real = np.expm1(p_inf), np.expm1(t_inf)
 
-    # Seleccionamos el primer bloque de 24 horas y nos aseguramos de que sea 1D
-    # Usamos .reshape(-1) para garantizar que la forma sea (24,)
-    target_plot = t_inf_real[0].reshape(-1)
-    pred_plot = p_inf_real[0].reshape(-1)
+    target_plot = t_inf_real.flatten()[:24]
+    pred_plot = p_inf_real.flatten()[:24]
 
-    # Verificar que ambos tengan 24 elementos antes de graficar
+    # Verificación de seguridad antes de graficar
     if len(target_plot) == 24 and len(pred_plot) == 24:
         plot_one_day(target_plot, pred_plot, day_idx=0)
-        print("Inferencia completada y gráfico generado.")
+        print("Inferencia completada y gráfico generado con éxito.")
     else:
-        print(f"Error de dimensiones: Real {target_plot.shape}, Pred {pred_plot.shape}")
+        print(f"Error: Dimensiones incorrectas. Target: {target_plot.shape}, Pred: {pred_plot.shape}")
 
 if __name__ == "__main__":
     main()
