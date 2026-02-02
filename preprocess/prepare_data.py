@@ -304,7 +304,7 @@ def preparar_x_df(x_df, tz_destino=None, valor_weather_nulo="desconocido"):
     x_df = anadir_posicion_solar(x_df, lat=latitud_real, lon=longitud_real)
     
     # features circulares (tus fórmulas)
-    x_df = extraer_features_circulares(x_df, col_dt="dt_iso")
+    x_df = extraer_features_circulares(x_df, col_dt=None)
     
     # eliminar columnas no informativas
     x_df = eliminar_columnas_no_informativas(x_df, cols_a_eliminar=["lat", "lon"])
