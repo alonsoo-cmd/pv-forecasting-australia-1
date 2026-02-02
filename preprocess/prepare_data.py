@@ -298,6 +298,11 @@ def cargar_stats(out_dir=OUT_DIR, filename="stats.pkl"):
 # -----------------------------
 def preparar_x_df(x_df, tz_destino=None, valor_weather_nulo="desconocido"):
     x_df = x_df.copy()
+
+    latitud_real = x_df['lat'].iloc[0]
+    longitud_real = x_df['lon'].iloc[0]
+    print(f"Usando latitud: {latitud_real}, longitud: {longitud_real} para cálculo solar.")
+
     x_df = rellenar_weather_description(x_df, valor=valor_weather_nulo)
     
     x_df = factorizar_weather_description(x_df, col="weather_description", sort=True)
@@ -306,11 +311,11 @@ def preparar_x_df(x_df, tz_destino=None, valor_weather_nulo="desconocido"):
     
     x_df = eliminar_fechas_invalidas(x_df, col="dt_iso")
 
-    latitud_real = x_df['lat'].iloc[0]
-    longitud_real = x_df['lon'].iloc[0]
-    print(f"Usando latitud: {latitud_real}, longitud: {longitud_real} para cálculo solar.")
-
     x_df = ordenar_y_indexar_por_fecha(x_df, col="dt_iso")
+
+    if x_df.index.duplicated().any():
+        print(f"⚠️ Se detectaron {x_df.index.duplicated().sum()} filas duplicadas. Eliminando...")
+        x_df = x_df[~x_df.index.duplicated(keep='first')]
     
     # Cálculo de posición solar (Ajusta lat/lon a tu ubicación real)
     x_df = anadir_posicion_solar(x_df, lat=latitud_real, lon=longitud_real)
