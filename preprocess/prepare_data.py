@@ -2,6 +2,7 @@ import pandas as pd
 import numpy as np
 from pathlib import Path
 import pickle
+from pvlib.solarposition import get_solarposition
 
 #debemos normalizar de tal forma que haya muchos ceros 
 
@@ -205,6 +206,31 @@ def split_por_indices(df, train_frac=0.7, val_frac=0.15):
 
     return train, val, test
 
+def anadir_posicion_solar(df, lat=40.4168, lon=-3.7038):
+    """
+    Calcula la elevación y azimut solar basado en el índice temporal.
+    """
+    df = df.copy()
+    # Asegurarse de que el índice es DatetimeIndex y tiene TZ
+    # Si no tiene, localizamos (ajusta a tu zona horaria local)
+    if df.index.tz is None:
+        times = df.index.tz_localize('UTC')
+    else:
+        times = df.index
+
+    # Obtener posición solar
+    solpos = get_solarposition(times, lat, lon)
+    
+    # Nos interesan principalmente la elevación y el azimut
+    df["solar_elevation"] = solpos["apparent_elevation"]
+    df["solar_azimuth"] = solpos["azimuth"]
+    
+    # Opcional: convertir a radianes y aplicar seno/coseno al azimut (es circular)
+    df["solar_azimuth_sin"] = np.sin(np.radians(solpos["azimuth"]))
+    df["solar_azimuth_cos"] = np.cos(np.radians(solpos["azimuth"]))
+    
+    return df
+
 
 # -----------------------------
 # Normalización SIN leakage
@@ -262,6 +288,15 @@ def preparar_x_df(x_df, tz_destino=None, valor_weather_nulo="desconocido"):
     x_df = parsear_dt_iso_16(x_df, tz_destino=tz_destino)
     
     x_df = eliminar_fechas_invalidas(x_df, col="dt_iso")
+
+    latitud_real = x_df['lat'].iloc[0]
+    longitud_real = x_df['lon'].iloc[0]
+    print(f"Usando latitud: {latitud_real}, longitud: {longitud_real} para cálculo solar.")
+
+    x_df = ordenar_y_indexar_por_fecha(x_df, col="dt_iso")
+    
+    # Cálculo de posición solar (Ajusta lat/lon a tu ubicación real)
+    x_df = anadir_posicion_solar(x_df, lat=latitud_real, lon=longitud_real)
     
     # features circulares (tus fórmulas)
     x_df = extraer_features_circulares(x_df, col_dt="dt_iso")
