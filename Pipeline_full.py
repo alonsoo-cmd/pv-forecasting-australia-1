@@ -75,7 +75,7 @@ def evaluate_engine(model, dataloader, device):
             y_np = y.numpy()
             if y_np.ndim == 3:
                 y_np = y_np.squeeze(-1)
-                
+
             preds.append(out)
             targets.append(y_np)
             
@@ -157,14 +157,17 @@ def main():
     p_inf, t_inf = evaluate_engine(model, dl_inf, device)
     p_inf_real, t_inf_real = np.expm1(p_inf), np.expm1(t_inf)
 
-    # Forzamos la conversión a 1D seleccionando el primer elemento del lote
-    # y eliminando cualquier dimensión extra singleton.
-    target_plot = np.atleast_1d(t_inf_real[0]).reshape(-1)
-    pred_plot = np.atleast_1d(p_inf_real[0]).reshape(-1)
+    # Seleccionamos el primer bloque de 24 horas y nos aseguramos de que sea 1D
+    # Usamos .reshape(-1) para garantizar que la forma sea (24,)
+    target_plot = t_inf_real[0].reshape(-1)
+    pred_plot = p_inf_real[0].reshape(-1)
 
-    # Ahora la función recibirá dos vectores limpios de 24 elementos
-    plot_one_day(target_plot, pred_plot, day_idx=0)
-    print("Inferencia completada y gráfico generado.")
+    # Verificar que ambos tengan 24 elementos antes de graficar
+    if len(target_plot) == 24 and len(pred_plot) == 24:
+        plot_one_day(target_plot, pred_plot, day_idx=0)
+        print("Inferencia completada y gráfico generado.")
+    else:
+        print(f"Error de dimensiones: Real {target_plot.shape}, Pred {pred_plot.shape}")
 
 if __name__ == "__main__":
     main()
