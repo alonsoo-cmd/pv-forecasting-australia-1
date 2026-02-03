@@ -229,7 +229,8 @@ def main():
     # --------------------------------------------------
     # Save best model
     # --------------------------------------------------
-    MODEL_PATH = "./checkpoints/best_model.pt"
+    BASE_PATH = "/content/drive/MyDrive/Proyecto_IA"
+    MODEL_PATH = f"{BASE_PATH}/checkpoints/best_model.pt"
     Path(MODEL_PATH).parent.mkdir(parents=True, exist_ok=True)
 
     torch.save({

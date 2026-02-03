@@ -127,11 +127,16 @@ def run_inference():
     
     # --- AUTO-DETECCIÓN DE PATHS ---
     # Buscamos el archivo .pt o .pth más reciente en la raíz o en checkpoints/
+    # Crea una carpeta llamada 'Proyecto_IA' en tu Google Drive manualmente o por código
+    BASE_PATH = "/content/drive/MyDrive/Proyecto_IA"
+    MODEL_PATH = f"{BASE_PATH}/checkpoints/best_model.pt"
+
+    # Tus rutas de búsqueda en la inferencia deberían ser:
     possible_paths = [
-        "./checkpoints/best_model.pt",
-        "./checkpoints/best_model_GRU.pt",
-        "./checkpoints/best_model_LSTM_FCN.pt",
-        "./best_model.pth"
+        f"{BASE_PATH}/checkpoints/best_model.pt",
+        f"{BASE_PATH}/checkpoints/best_model_GRU.pt",
+        f"{BASE_PATH}/checkpoints/best_model_LSTM_FCN.pt",
+        f"{BASE_PATH}/checkpoints/best_model_LSTM.pt",
     ]
     
     CHECKPOINT_PATH = None
