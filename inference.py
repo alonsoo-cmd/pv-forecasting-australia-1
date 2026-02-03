@@ -128,10 +128,10 @@ def run_inference():
     # --- AUTO-DETECCIÓN DE PATHS ---
     # Buscamos el archivo .pt o .pth más reciente en la raíz o en checkpoints/
     possible_paths = [
+        "./checkpoints/best_model.pt",
         "./checkpoints/best_model_GRU.pt",
         "./checkpoints/best_model_LSTM_FCN.pt",
-        "./best_model.pth",
-        "./checkpoints/best_model.pt"
+        "./best_model.pth"
     ]
     
     CHECKPOINT_PATH = None
@@ -140,11 +140,11 @@ def run_inference():
             CHECKPOINT_PATH = p
             break
     
+    print(f"🔍 Usando checkpoint: {CHECKPOINT_PATH}")
     if CHECKPOINT_PATH is None:
         # Si no lo encuentra, dejamos la ruta por defecto para que salte el error explicativo
         CHECKPOINT_PATH = "./checkpoints/best_model_LSTM_FCN.pt"
 
-    print(f"🔍 Usando checkpoint: {CHECKPOINT_PATH}")
     DATA_PATH = "./data/Processed"
     inf_x, inf_y = Pipeline.load_split("inference", DATA_PATH)
     input_size = inf_x.shape[1]
