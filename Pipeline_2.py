@@ -8,6 +8,7 @@ import numpy as np
 import pandas as pd
 from pathlib import Path
 from torch.utils.data import Dataset, DataLoader
+from pathlib import Path
 
 from utils.graph_pipeline import (
     plot_continuous_horizon0,
@@ -165,8 +166,8 @@ def load_split(name, base_path, y_col="Energy"):
 
 CONFIG_PATH = "./config/timeseries.yaml"
 DATA_PATH = "./data/Processed"
-CHECKPOINT_DIR = Path("./checkpoints")
-CHECKPOINT_DIR.mkdir(exist_ok=True)
+DRIVE_BASE_PATH = Path("/content/drive/MyDrive/Proyecto_IA")
+CHECKPOINT_DIR = DRIVE_BASE_PATH / "checkpoints"
 
 training_model_exexution = True
 
@@ -283,6 +284,7 @@ def training():
     # --------------------------------------------------
     best_model_path = CHECKPOINT_DIR / f"best_model_{best_model_name}.pt"
 
+    # 4. Guardar el diccionario en la ruta de Drive
     torch.save(
         {
             "model_name": best_model_name,
@@ -293,7 +295,7 @@ def training():
         best_model_path,
     )
 
-    print(f"Best model saved at: {best_model_path}")
+    print(f"✅ Modelo guardado exitosamente en Drive: {best_model_path}")
 
     # --------------------------------------------------
     # TEST (BEST MODEL ONLY)
