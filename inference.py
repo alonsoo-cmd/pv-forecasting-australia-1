@@ -147,6 +147,7 @@ def run_inference():
     DATA_PATH = "./data/Processed"
     inf_x, inf_y = Pipeline.load_split("inference", DATA_PATH)
     input_size = inf_x.shape[1]
+    print(f"📊 Inferencia: Detectadas {input_size} variables de entrada.")
 
     # --- LOAD MODEL ---
     model, model_name, model_params, full_cfg = load_trained_model(

@@ -144,6 +144,7 @@ def main():
     val_x, val_y = load_split("val", DATA_PATH)
 
     input_size = train_x.shape[1]
+    print(f"📊 Entrenamiento: Detectadas {input_size} variables de entrada.") # Añade esto
 
     # --------------------------------------------------
     # Dataset & Loader
@@ -234,7 +235,7 @@ def main():
     torch.save({
         "model_name": best_model_name,
         "model_state_dict": best_state,
-        "config": cfg,
+        "config": {"model": cfg},
     }, MODEL_PATH)
 
     print(f"\nBest model: {best_model_name} (MASE={best_mase:.4f})")
