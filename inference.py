@@ -45,8 +45,8 @@ def load_trained_model(checkpoint_path, device, input_size):
     if state_dict_key not in checkpoint:
         # Si no hay diccionario de claves, quizás el archivo es solo el state_dict directamente
         state_dict = checkpoint
-        model_name = "LSTM_FCN" # Asumimos el mejor por defecto
-        print("⚠️ Checkpoint simple detectado. Asumiendo LSTM_FCN por defecto.")
+        model_name = "GRU" if "GRU" in checkpoint_path else "LSTM_FCN"
+        print(f"⚠️ Checkpoint simple detectado. Asumiendo {model_name} por nombre de archivo.")
     else:
         state_dict = checkpoint[state_dict_key]
         model_name = checkpoint.get("model_name", "LSTM_FCN")
@@ -68,28 +68,23 @@ def load_trained_model(checkpoint_path, device, input_size):
         }
         full_cfg = {"model": cfg}
 
-    # 4. Corrección de seguridad para LSTM_FCN
-    if model_name == "LSTM_FCN" and cfg.get("hidden_size") == 128:
-        print("⚠️ Corrigiendo hidden_size: 128 -> 96")
-        cfg["hidden_size"] = 96
-
-    # 5. Reconstruir parámetros del modelo
+    # 4. Reconstruir parámetros del modelo
     if model_name in ["LSTM", "GRU"]:
         model_params = {
             "input_size": input_size,
-            "hidden_size": cfg.get("hidden_size", 96),
+            "hidden_size": cfg.get("hidden_size", 128),
             "output_size": cfg.get("output_size", 24),
             "dropout": cfg.get("dropout", 0.3),
         }
     elif model_name == "LSTM_FCN":
         model_params = {
             "input_size": input_size,
-            "hidden_size": cfg.get("hidden_size", 96),
+            "hidden_size": cfg.get("hidden_size", 128),
             "output_window": cfg.get("output_window", 24),
             "dropout": cfg.get("dropout", 0.3),
         }
 
-    # 6. Cargar pesos
+    # 5. Cargar pesos
     model_class = MODEL_FACTORY[model_name]
     model = model_class(**model_params)
     
@@ -133,6 +128,7 @@ def run_inference():
     # --- AUTO-DETECCIÓN DE PATHS ---
     # Buscamos el archivo .pt o .pth más reciente en la raíz o en checkpoints/
     possible_paths = [
+        "./checkpoints/best_model_GRU.pt",
         "./checkpoints/best_model_LSTM_FCN.pt",
         "./best_model.pth",
         "./checkpoints/best_model.pt"
