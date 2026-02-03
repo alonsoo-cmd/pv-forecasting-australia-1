@@ -144,6 +144,7 @@ def run_inference():
         # Si no lo encuentra, dejamos la ruta por defecto para que salte el error explicativo
         CHECKPOINT_PATH = "./checkpoints/best_model_LSTM_FCN.pt"
 
+    print(f"🔍 Usando checkpoint: {CHECKPOINT_PATH}")
     DATA_PATH = "./data/Processed"
     inf_x, inf_y = Pipeline.load_split("inference", DATA_PATH)
     input_size = inf_x.shape[1]
