@@ -59,7 +59,7 @@ def load_trained_model(checkpoint_path, device, input_size):
         print("⚠️ El checkpoint no tiene 'config'. Usando valores estándar de emergencia.")
         # Valores por defecto para que no se detenga la primera vez
         cfg = {
-            "hidden_size": 96,
+            "hidden_size": 128, # Este valor se corregirá más adelante si es LSTM_FCN
             "output_size": 24, # o output_window
             "output_window": 24,
             "dropout": 0.3,

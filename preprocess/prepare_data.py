@@ -328,9 +328,6 @@ def preparar_x_df(x_df, tz_destino=None, valor_weather_nulo="desconocido"):
 
     # NA
     x_df = replace_na(x_df, "rain_1h")
-
-    # ordenar e indexar por fecha (como antes)
-    x_df = ordenar_y_indexar_por_fecha(x_df, col="dt_iso")
     
     return x_df
 
