@@ -241,6 +241,7 @@ def main():
 
     print(f"\nBest model: {best_model_name} (MASE={best_mase:.4f})")
     print(f"Saved to: {MODEL_PATH}")
+    print("Comprobación")
 
 
 if __name__ == "__main__":

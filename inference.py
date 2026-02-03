@@ -128,27 +128,28 @@ def run_inference():
     # --- AUTO-DETECCIÓN DE PATHS ---
     # Buscamos el archivo .pt o .pth más reciente en la raíz o en checkpoints/
     # Crea una carpeta llamada 'Proyecto_IA' en tu Google Drive manualmente o por código
-    BASE_PATH = "/content/drive/MyDrive/Proyecto_IA"
-    MODEL_PATH = f"{BASE_PATH}/checkpoints/best_model.pt"
+    import os
 
-    # Tus rutas de búsqueda en la inferencia deberían ser:
+    # Define la ruta base de tu proyecto en Drive
+    # Asegúrate de que el nombre de la carpeta sea el mismo donde guardas en 'train'
+    DRIVE_PATH = "/content/drive/MyDrive/Proyecto_IA" 
+
     possible_paths = [
-        f"{BASE_PATH}/checkpoints/best_model.pt",
-        f"{BASE_PATH}/checkpoints/best_model_GRU.pt",
-        f"{BASE_PATH}/checkpoints/best_model_LSTM_FCN.pt",
-        f"{BASE_PATH}/checkpoints/best_model_LSTM.pt",
+        f"{DRIVE_PATH}/checkpoints/best_model.pt",
+        f"{DRIVE_PATH}/checkpoints/best_model_GRU.pt",
+        f"{DRIVE_PATH}/checkpoints/best_model_LSTM_FCN.pt",
+        f"{DRIVE_PATH}/best_model.pth"
     ]
-    
+
     CHECKPOINT_PATH = None
     for p in possible_paths:
         if os.path.exists(p):
             CHECKPOINT_PATH = p
+            print(f"✅ Checkpoint encontrado en: {p}")
             break
-    
-    print(f"🔍 Usando checkpoint: {CHECKPOINT_PATH}")
+
     if CHECKPOINT_PATH is None:
-        # Si no lo encuentra, dejamos la ruta por defecto para que salte el error explicativo
-        CHECKPOINT_PATH = "./checkpoints/best_model_LSTM_FCN.pt"
+        print("❌ No se encontró ningún archivo de modelo en Drive. Revisa las rutas.")
 
     DATA_PATH = "./data/Processed"
     inf_x, inf_y = Pipeline.load_split("inference", DATA_PATH)
