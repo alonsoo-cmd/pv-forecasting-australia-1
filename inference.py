@@ -121,7 +121,7 @@ def inference_model(model, dataloader, device):
 # ======================================================
 # =================== RUN ==============================
 # ======================================================
-def run_inference():
+def run_inference(best_model_path=None):
     device = "cuda" if torch.cuda.is_available() else "cpu"
     print("Using device:", device)
     
@@ -130,23 +130,7 @@ def run_inference():
     # Crea una carpeta llamada 'Proyecto_IA' en tu Google Drive manualmente o por código
     import os
 
-    # Define la ruta base de tu proyecto en Drive
-    # Asegúrate de que el nombre de la carpeta sea el mismo donde guardas en 'train'
-    DRIVE_PATH = "/content/drive/MyDrive/Proyecto_IA" 
-
-    possible_paths = [
-        f"{DRIVE_PATH}/checkpoints/best_model.pt",
-        f"{DRIVE_PATH}/checkpoints/best_model_GRU.pt",
-        f"{DRIVE_PATH}/checkpoints/best_model_LSTM_FCN.pt",
-        f"{DRIVE_PATH}/best_model.pth"
-    ]
-
-    CHECKPOINT_PATH = None
-    for p in possible_paths:
-        if os.path.exists(p):
-            CHECKPOINT_PATH = p
-            print(f"✅ Checkpoint encontrado en: {p}")
-            break
+    CHECKPOINT_PATH = best_model_path  # Si se proporciona un path específico, úsalo
 
     if CHECKPOINT_PATH is None:
         print("❌ No se encontró ningún archivo de modelo en Drive. Revisa las rutas.")
@@ -219,4 +203,5 @@ def run_inference():
     print(f"\n✅ Inferencia guardada en: {out_path}")
 
 if __name__ == "__main__":
-    run_inference()
+    from Pipeline_2 import best_model_path
+    run_inference(best_model_path=best_model_path)

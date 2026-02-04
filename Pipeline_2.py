@@ -283,6 +283,7 @@ def training():
     # SAVE BEST MODEL
     # --------------------------------------------------
     best_model_path = CHECKPOINT_DIR / f"best_model_{best_model_name}.pt"
+    print(f"📁 Guardando el mejor modelo en: {best_model_path}")
 
     # 4. Guardar el diccionario en la ruta de Drive
     torch.save(
