@@ -339,6 +339,8 @@ def training():
 
     plot_scatter_real_vs_pred(test_targets_real, test_preds_real)
 
+    return best_model_path
+
 
 if __name__ == "__main__":
     training()
