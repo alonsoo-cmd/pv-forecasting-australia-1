@@ -203,5 +203,5 @@ def run_inference(best_model_path=None):
     print(f"\n✅ Inferencia guardada en: {out_path}")
 
 if __name__ == "__main__":
-    from Pipeline_2 import best_model_path
+    best_model_path = Pipeline.best_model_path
     run_inference(best_model_path=best_model_path)
