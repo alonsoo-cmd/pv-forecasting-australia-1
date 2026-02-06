@@ -4,14 +4,28 @@ import torch.nn as nn
 class GRU_two_layers(nn.Module):
     def __init__(self, input_size, hidden_size, output_size, dropout):
         super().__init__()
-        self.gru = nn.GRU(input_size = input_size , hidden_size= hidden_size , num_layers=2, batch_first=True, bidirectional = False, dropout = dropout)
+        # Define the GRU layer: processes sequential data with gated recurrent units
+        self.gru = nn.GRU(
+            input_size=input_size, 
+            hidden_size=hidden_size, 
+            num_layers=2, 
+            batch_first=True, 
+            bidirectional=False, 
+            dropout=dropout
+        )
+        
+        # Final dense layer: maps the last hidden state to the prediction output
         self.fc = nn.Linear(hidden_size, output_size)
     
     def forward(self, x):
-        #Passes the sequences complete by the GRU layer
-        # Out: hidden states of all the times and h_n es the last hidden state
-        out, h_n =self.gru(x)
-        # extract the last hidden state that contains information from the whole sequence
+        # Passes the complete sequence through the GRU layer
+        # out: hidden states for all time steps, h_n: last hidden state for all layers
+        out, h_n = self.gru(x)
+        
+        # Extract the hidden state from the last time step which contains 
+        # information from the entire sequence
         last_hidden = out[:, -1, :]
+        
+        # Apply the linear layer to get the final predictions
         y_hat = self.fc(last_hidden)
         return y_hat

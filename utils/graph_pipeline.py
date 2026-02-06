@@ -1,4 +1,3 @@
-
 import numpy as np
 import matplotlib.pyplot as plt
 
@@ -10,8 +9,8 @@ def plot_continuous_horizon0(
     title=None
 ):
     """
-    Serie continua usando SOLO horizon=0:
-    y[t] vs yhat[t] donde yhat[t] = preds[window_t][0]
+    Continuous series using ONLY horizon=0:
+    y[t] vs yhat[t] where yhat[t] = preds[window_t][0]
     """
     y_true = np.asarray(y_true)
     y_pred = np.asarray(y_pred)
@@ -30,12 +29,12 @@ def plot_continuous_horizon0(
     x = np.arange(len(y_true))
 
     plt.figure(figsize=(14, 4))
-    plt.plot(x, y_true, label="Real", linewidth=2)
-    plt.plot(x, y_pred, "--", label="Predicho", linewidth=2)
+    plt.plot(x, y_true, label="Actual", linewidth=2)
+    plt.plot(x, y_pred, "--", label="Predicted", linewidth=2)
 
-    plt.xlabel("Horas")
-    plt.ylabel("Energía (kWh)")
-    plt.title(title or f"Predicción continua horizon=0 ({n_days} días)")
+    plt.xlabel("Hours")
+    plt.ylabel("Energy (kWh)")
+    plt.title(title or f"Continuous Prediction horizon=0 ({n_days} days)")
     plt.legend()
     plt.grid(True, alpha=0.3)
     plt.tight_layout()
@@ -51,11 +50,11 @@ def plot_one_day(y_true, y_pred, day_idx):
     x = np.arange(24)
 
     plt.figure(figsize=(12, 4))
-    plt.plot(x, yt, label="Real", linewidth=2)
-    plt.plot(x, yp, "--", label="Predicho", linewidth=2)
-    plt.title(f"Día {day_idx} – Real vs Predicho")
-    plt.xlabel("Hora del día")
-    plt.ylabel("Energía (kWh)")
+    plt.plot(x, yt, label="Actual", linewidth=2)
+    plt.plot(x, yp, "--", label="Predicted", linewidth=2)
+    plt.title(f"Day {day_idx} – Actual vs Predicted")
+    plt.xlabel("Hour of the day")
+    plt.ylabel("Energy (kWh)")
     plt.grid(True, alpha=0.3)
     plt.legend()
     plt.tight_layout()
@@ -64,8 +63,8 @@ def plot_one_day(y_true, y_pred, day_idx):
     plt.figure(figsize=(12, 3))
     plt.bar(x, err)
     plt.axhline(0, color="black")
-    plt.title("Error por hora")
-    plt.xlabel("Hora")
+    plt.title("Hourly Error")
+    plt.xlabel("Hour")
     plt.ylabel("Error (kWh)")
     plt.tight_layout()
     plt.show()
@@ -78,9 +77,9 @@ def plot_scatter_real_vs_pred(y_true, y_pred):
     plt.scatter(y_true, y_pred, alpha=0.3)
     maxv = max(y_true.max(), y_pred.max())
     plt.plot([0, maxv], [0, maxv], "r--")
-    plt.xlabel("Real (kWh)")
-    plt.ylabel("Predicho (kWh)")
-    plt.title("Real vs Predicho (horizon=0)")
+    plt.xlabel("Actual (kWh)")
+    plt.ylabel("Predicted (kWh)")
+    plt.title("Actual vs Predicted (horizon=0)")
     plt.grid(True, alpha=0.3)
     plt.tight_layout()
     plt.show()

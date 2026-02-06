@@ -1,3 +1,2 @@
-
-#Activa la carpeta como paquete python y una carpeta importable
-#No es necesario poner nada aqui
+# Enables the folder as a Python package and an importable directory
+# No content is required here

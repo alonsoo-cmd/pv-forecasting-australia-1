@@ -34,33 +34,33 @@ MODEL_FACTORY = {
 # ================= LOAD TRAINED MODEL ================
 # ======================================================
 def load_trained_model(checkpoint_path, device, input_size):
-    # 1. Verificación de existencia
+    # 1. Existence verification
     if not os.path.exists(checkpoint_path):
-        raise FileNotFoundError(f"❌ No se encontró el modelo en: {checkpoint_path}")
+        raise FileNotFoundError(f"❌ Model not found at: {checkpoint_path}")
 
     checkpoint = torch.load(checkpoint_path, map_location=device, weights_only=False)
 
-    # 2. Identificar claves (compatibilidad con versiones viejas y nuevas)
+    # 2. Identify keys (compatibility with old and new versions)
     state_dict_key = "state_dict" if "state_dict" in checkpoint else "model_state_dict"
     if state_dict_key not in checkpoint:
-        # Si no hay diccionario de claves, quizás el archivo es solo el state_dict directamente
+        # If no key dictionary, maybe the file is just the state_dict directly
         state_dict = checkpoint
         model_name = "GRU" if "GRU" in checkpoint_path else "LSTM_FCN"
-        print(f"⚠️ Checkpoint simple detectado. Asumiendo {model_name} por nombre de archivo.")
+        print(f"⚠️ Simple checkpoint detected. Assuming {model_name} based on filename.")
     else:
         state_dict = checkpoint[state_dict_key]
         model_name = checkpoint.get("model_name", "LSTM_FCN")
 
-    # 3. Manejo de la Configuración (EVITA EL ERROR DE ASSERT)
+    # 3. Configuration Handling (Avoids ASSERT error)
     if "config" in checkpoint:
         cfg = checkpoint["config"]["model"]
         full_cfg = checkpoint["config"]
     else:
-        print("⚠️ El checkpoint no tiene 'config'. Usando valores estándar de emergencia.")
-        # Valores por defecto para que no se detenga la primera vez
+        print("⚠️ Checkpoint does not have 'config'. Using emergency standard values.")
+        # Default values so it doesn't stop the first time
         cfg = {
-            "hidden_size": 128, # Este valor se corregirá más adelante si es LSTM_FCN
-            "output_size": 24, # o output_window
+            "hidden_size": 128, # This value will be corrected later if it's LSTM_FCN
+            "output_size": 24, # or output_window
             "output_window": 24,
             "dropout": 0.3,
             "length": 24,
@@ -68,7 +68,7 @@ def load_trained_model(checkpoint_path, device, input_size):
         }
         full_cfg = {"model": cfg}
 
-    # 4. Reconstruir parámetros del modelo
+    # 4. Reconstruct model parameters
     if model_name in ["LSTM", "GRU"]:
         model_params = {
             "input_size": input_size,
@@ -84,16 +84,16 @@ def load_trained_model(checkpoint_path, device, input_size):
             "dropout": cfg.get("dropout", 0.3),
         }
 
-    # 5. Cargar pesos
+    # 5. Load weights
     model_class = MODEL_FACTORY[model_name]
     model = model_class(**model_params)
     
-    # load_state_dict con strict=False por si hay pequeñas variaciones
+    # load_state_dict with strict=False in case of minor variations
     model.load_state_dict(state_dict, strict=False)
     model.to(device)
     model.eval()
 
-    print(f"\n✅ Checkpoint cargado con éxito.")
+    print(f"\n✅ Checkpoint loaded successfully.")
     return model, model_name, model_params, full_cfg
 
 # ======================================================
@@ -105,7 +105,7 @@ def inference_model(model, dataloader, device):
         for x, y in dataloader:
             x = x.to(device)
             out = model(x).cpu().numpy()
-            # Asegurar que la forma sea (Batch, Window)
+            # Ensure shape is (Batch, Window)
             if out.ndim == 3: out = out.squeeze(-1)
             preds.append(out)
             
@@ -125,20 +125,19 @@ def run_inference(best_model_path=None):
     device = "cuda" if torch.cuda.is_available() else "cpu"
     print("Using device:", device)
     
-    # --- AUTO-DETECCIÓN DE PATHS ---
-    # Buscamos el archivo .pt o .pth más reciente en la raíz o en checkpoints/
-    # Crea una carpeta llamada 'Proyecto_IA' en tu Google Drive manualmente o por código
+    # --- PATH AUTO-DETECTION ---
+    # We look for the most recent .pt or .pth file in root or checkpoints/
     import os
 
-    CHECKPOINT_PATH = best_model_path  # Si se proporciona un path específico, úsalo
+    CHECKPOINT_PATH = best_model_path  # If a specific path is provided, use it
 
     if CHECKPOINT_PATH is None:
-        print("❌ No se encontró ningún archivo de modelo en Drive. Revisa las rutas.")
+        print("❌ No model file found in Drive. Check paths.")
 
     DATA_PATH = "./data/Processed"
     inf_x, inf_y = Pipeline.load_split("inference", DATA_PATH)
     input_size = inf_x.shape[1]
-    print(f"📊 Inferencia: Detectadas {input_size} variables de entrada.")
+    print(f"📊 Inference: Detected {input_size} input variables.")
 
     # --- LOAD MODEL ---
     model, model_name, model_params, full_cfg = load_trained_model(
@@ -162,7 +161,7 @@ def run_inference(best_model_path=None):
     # --- INFERENCE ---
     preds, targets = inference_model(model, dl_inf, device)
 
-    # --- DESNORMALIZAR ---
+    # --- DE-NORMALIZE ---
     with open(f"{DATA_PATH}/stats.pkl", "rb") as f:
         stats = pickle.load(f)
 
@@ -181,15 +180,15 @@ def run_inference(best_model_path=None):
     print(f"MASE horizon=0: {mase_h0:.4f}")
     print(f"RMSE horizon=0: {rmse_h0:.4f} kWh")
     
-    # --- PLOTS CORREGIDOS ---
-    # En lugar de [0], tomamos una tajada de 24 horas para representar un día
-    dia_real = targets_real[0:24].flatten()
-    dia_pred = preds_real[0:24].flatten()
+    # --- PLOTS ---
+    # Take a 24-hour slice to represent one day
+    day_real = targets_real[0:24].flatten()
+    day_pred = preds_real[0:24].flatten()
     
-    if len(dia_real) == 24:
-        plot_one_day(dia_real, dia_pred, day_idx=10)
+    if len(day_real) == 24:
+        plot_one_day(day_real, day_pred, day_idx=10)
     else:
-        print("No hay suficientes datos para graficar 24h")
+        print("Not enough data to plot 24h")
     
     plot_continuous_horizon0(targets_real, preds_real, start_idx=0, n_days=7)
     plot_scatter_real_vs_pred(targets_real, preds_real)
@@ -200,8 +199,9 @@ def run_inference(best_model_path=None):
     os.makedirs("./outputs", exist_ok=True)
     df.to_excel(out_path, index=False)
 
-    print(f"\n✅ Inferencia guardada en: {out_path}")
+    print(f"\n✅ Inference saved to: {out_path}")
 
 if __name__ == "__main__":
-    best_model_path = Pipeline.training()
+    # Note: Ensure Pipeline.training() is also renamed in the imported script
+    best_model_path = Pipeline.main() 
     run_inference(best_model_path=best_model_path)

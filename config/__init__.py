@@ -1,2 +1,1 @@
-
-#Activa la carpeta como paquete python
+# Enables the folder as a Python package

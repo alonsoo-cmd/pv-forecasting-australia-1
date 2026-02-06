@@ -4,14 +4,14 @@ from pathlib import Path
 import pickle
 from pvlib.solarposition import get_solarposition
 
-#debemos normalizar de tal forma que haya muchos ceros 
+# We must normalize in such a way that there are many zeros 
 
-# Rutas
-ruta_y = "data/Raw/pv_dataset_full.xlsx"
-ruta_x = "data/Raw/wx_dataset_full.xlsx"
+# Paths
+y_path = "data/Raw/pv_dataset_full.xlsx"
+x_path = "data/Raw/wx_dataset_full.xlsx"
 OUT_DIR = Path("../data/Processed")
 
-def normalizar_dt_df(df, col=None):
+def normalize_dt_df(df, col=None):
     df = df.copy()
 
     if col is None:
@@ -24,92 +24,89 @@ def normalizar_dt_df(df, col=None):
     return df
 
 
-def cargar_excel(ruta: str, hoja: str | int = 0):
-    return pd.read_excel(ruta, sheet_name=hoja)
+def load_excel(path: str, sheet: str | int = 0):
+    return pd.read_excel(path, sheet_name=sheet)
 
-def unir_x_y(x_df, y_df, y_col="Energy"):
+def join_x_y(x_df, y_df, y_col="Energy"):
     """
-    Une X e Y en un único DataFrame por el índice temporal.
+    Joins X and Y into a single DataFrame by the temporal index.
     """
-    assert x_df.index.equals(y_df.index), "X e Y no están alineados"
+    assert x_df.index.equals(y_df.index), "X and Y are not aligned"
 
     df = x_df.copy()
     df[y_col] = y_df[y_col]
     return df
 
 
-
 def save_joint_splits(train, val, test, out_dir=OUT_DIR):
     out_dir = Path(out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
 
-    # quitar tz del índice para Excel
-    train = quitar_timezone_indice(train)
-    val   = quitar_timezone_indice(val)
-    test  = quitar_timezone_indice(test)
+    # remove tz from index for Excel
+    train = remove_index_timezone(train)
+    val   = remove_index_timezone(val)
+    test  = remove_index_timezone(test)
 
     train.to_excel(out_dir / "train.xlsx", index=True)
     val.to_excel(out_dir / "val.xlsx", index=True)
     test.to_excel(out_dir / "test.xlsx", index=True)
 
-    print("Guardados: train.xlsx, val.xlsx, test.xlsx")
+    print("Saved: train.xlsx, val.xlsx, test.xlsx")
 
 
 def save_joint_splits_inference(x_df, y_df, out_dir=OUT_DIR):
     out_dir = Path(out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
 
-    # quitar tz del índice para Excel
-    x_inference = quitar_timezone_indice(x_df)
-    y_inference   = quitar_timezone_indice(y_df)
+    # remove tz from index for Excel
+    x_inference = remove_index_timezone(x_df)
+    y_inference = remove_index_timezone(y_df)
     
 
     x_inference.to_excel(out_dir / "x_inference.xlsx", index=True)
     y_inference.to_excel(out_dir / "y_inference.xlsx", index=True)
     
 
-    print("Guardados: x_inference, y_inference")
+    print("Saved: x_inference, y_inference")
 
-def descargar_excel(url_o_ruta: str, hoja: str | int = 0) -> pd.DataFrame:
+def download_excel(url_or_path: str, sheet: str | int = 0) -> pd.DataFrame:
     """
-    Descarga (si es URL) o abre (si es ruta local) un Excel y devuelve la hoja indicada como DataFrame.
-    hoja puede ser nombre ("Sheet1") o índice (0, 1, 2...).
+    Downloads (if URL) or opens (if local path) an Excel and returns the specified sheet as a DataFrame.
     """
-    return pd.read_excel(url_o_ruta, sheet_name=hoja)
+    return pd.read_excel(url_or_path, sheet_name=sheet)
 
-def concatenar_hojas(df1: pd.DataFrame, df2: pd.DataFrame, axis: int = 0) -> pd.DataFrame:
+def concatenate_sheets(df1: pd.DataFrame, df2: pd.DataFrame, axis: int = 0) -> pd.DataFrame:
     """
-    Concatena dos DataFrames.
-    axis=0 -> uno debajo del otro (mismas columnas)
-    axis=1 -> lado a lado (mismas filas / índice)
+    Concatenates two DataFrames.
+    axis=0 -> one below the other (same columns)
+    axis=1 -> side by side (same rows / index)
     """
     return pd.concat([df1, df2], axis=axis, ignore_index=(axis == 0))
 
 
-def rellenar_weather_description(x_df, valor="desconocido"):
+def fill_weather_description(x_df, value="unknown"):
     x_df = x_df.copy()
-    x_df["weather_description"] = x_df["weather_description"].fillna(valor)
+    x_df["weather_description"] = x_df["weather_description"].fillna(value)
     return x_df
 
 
-def factorizar_weather_description(x_df, col="weather_description", sort=True):
+def factorize_weather_description(x_df, col="weather_description", sort=True):
     x_df = x_df.copy()
     ids, vocab = pd.factorize(x_df[col], sort=sort)
     x_df[col] = ids
     return x_df
 
-def transformar_y(y):
+def transform_y(y):
     y = y.copy()
     y["Energy"] = np.log1p(y["Energy"])
     return y
 
 
-
-def parsear_dt_iso_16(x_df, col="dt_iso", tz_destino=None):
+def parse_dt_iso_16(x_df, col="dt_iso", target_tz=None):
     """
-    - Se queda con los primeros 16 chars (YYYY-MM-DD HH:MM)
-    - Parsea en UTC (tz-aware)
-    - Si tz_destino no es None, convierte a esa tz
+    - Keeps the first 16 chars (YYYY-MM-DD HH:MM)
+    - Parses in UTC (tz-aware)
+    - If target_tz is not None, converts to that tz
     """
     x_df = x_df.copy()
 
@@ -119,42 +116,39 @@ def parsear_dt_iso_16(x_df, col="dt_iso", tz_destino=None):
 
     s = pd.to_datetime(s, format="%Y-%m-%d %H:%M", errors="coerce")
 
-    s = s.dt.tz_localize(tz_destino)
+    s = s.dt.tz_localize(target_tz)
 
     x_df[col] = s
     return x_df
 
 
-
-
-def eliminar_fechas_invalidas(x_df, col):
+def delete_invalid_dates(x_df, col):
     return x_df.dropna(subset=[col])
 
 
-def extraer_features_circulares(df, col_dt="dt_iso"):
+def extract_circular_features(df, dt_col="dt_iso"):
     """
-    Extrae características cíclicas. 
-    Si col_dt es None o no está en las columnas, usa el índice del DataFrame.
+    Extracts cyclic characteristics. 
+    If dt_col is None or not in columns, uses the DataFrame index.
     """
     df = df.copy()
 
-    # 1. Lógica de selección de la fuente de tiempo
-    if col_dt is not None and col_dt in df.columns:
-        # Si la columna existe, la usamos
-        dt_series = df[col_dt].dt
+    # 1. Time source selection logic
+    if dt_col is not None and dt_col in df.columns:
+        # If column exists, we use it
+        dt_series = df[dt_col].dt
     else:
-        # Si col_dt es None o ya se movió al índice, usamos el índice
-        # Nos aseguramos de que el índice sea de tipo Datetime
+        # If dt_col is None or moved to index, use index
         if not pd.api.types.is_datetime64_any_dtype(df.index):
             df.index = pd.to_datetime(df.index)
         dt_series = df.index
 
-    # 2. Extraer componentes usando la serie identificada
+    # 2. Extract components
     hour = dt_series.hour
     month = dt_series.month
     weekday = dt_series.weekday
 
-    # 3. Cálculos circulares
+    # 3. Circular calculations
     df["hour_sin"] = np.sin(2 * np.pi * hour / 24)
     df["hour_cos"] = np.cos(2 * np.pi * hour / 24)
 
@@ -164,17 +158,16 @@ def extraer_features_circulares(df, col_dt="dt_iso"):
     df["weekday_sin"] = np.sin(2 * np.pi * weekday / 7)
     df["weekday_cos"] = np.cos(2 * np.pi * weekday / 7)
 
-    # Nota: Ya no borramos columnas temporales porque no las creamos en el DF
     return df
 
 
-def ordenar_y_indexar_por_fecha(df, col="dt_iso"):
+def sort_and_index_by_date(df, col="dt_iso"):
     return df.sort_values(col).set_index(col)
 
 
-def quitar_timezone_indice(df):
+def remove_index_timezone(df):
     """
-    Quita tz del índice sin desplazar horas (Excel-friendly).
+    Removes tz from index without shifting hours (Excel-friendly).
     """
     df = df.copy()
     if isinstance(df.index, pd.DatetimeIndex) and df.index.tz is not None:
@@ -189,23 +182,23 @@ def replace_na(df, col):
     return df
 
 
-def eliminar_columnas_no_informativas(x_df, cols_a_eliminar):
+def delete_non_informative_columns(x_df, cols_to_delete):
     x_df = x_df.copy()
-    cols_existentes = [c for c in cols_a_eliminar if c in x_df.columns]
-    if cols_existentes:
-        x_df.drop(columns=cols_existentes, inplace=True)
+    existing_cols = [c for c in cols_to_delete if c in x_df.columns]
+    if existing_cols:
+        x_df.drop(columns=existing_cols, inplace=True)
     return x_df
 
 
 # -----------------------------
-# Split temporal por índices (NO inteligente)
+# Split by indices (Sequential)
 # -----------------------------
-def split_por_indices(df, train_frac=0.7, val_frac=0.15):
+def split_by_indices(df, train_frac=0.7, val_frac=0.15):
     """
-    Split SECUENCIAL:
-      train = primeros train_frac
-      val   = siguiente val_frac
-      test  = resto
+    SEQUENTIAL split:
+      train = first train_frac
+      val   = next val_frac
+      test  = remainder
     """
     df = df.copy()
     n = len(df)
@@ -218,31 +211,29 @@ def split_por_indices(df, train_frac=0.7, val_frac=0.15):
 
     return train, val, test
 
-def anadir_posicion_solar(df, lat=40.4168, lon=-3.7038):
+def add_solar_position(df, lat=40.4168, lon=-3.7038):
     """
-    Calcula la elevación y azimut solar basado en el índice temporal.
+    Calculates solar elevation and azimuth based on temporal index.
     """
     df = df.copy()
 
     if df.index.duplicated().any():
-        print(f"⚠️ Se detectaron {df.index.duplicated().sum()} filas duplicadas. Eliminando...")
+        print(f"⚠️ Detected {df.index.duplicated().sum()} duplicate rows. Removing...")
         df = df[~df.index.duplicated(keep='first')]
 
-    # Asegurarse de que el índice es DatetimeIndex y tiene TZ
-    # Si no tiene, localizamos (ajusta a tu zona horaria local)
+    # Ensure index is DatetimeIndex and has TZ
     if df.index.tz is None:
         times = df.index.tz_localize('UTC')
     else:
         times = df.index
 
-    # Obtener posición solar
+    # Get solar position
     solpos = get_solarposition(times, lat, lon)
     
-    # Nos interesan principalmente la elevación y el azimut
     df["solar_elevation"] = solpos["apparent_elevation"]
     df["solar_azimuth"] = solpos["azimuth"]
     
-    # Opcional: convertir a radianes y aplicar seno/coseno al azimut (es circular)
+    # Circular features for azimuth
     df["solar_azimuth_sin"] = np.sin(np.radians(solpos["azimuth"]))
     df["solar_azimuth_cos"] = np.cos(np.radians(solpos["azimuth"]))
     
@@ -250,19 +241,17 @@ def anadir_posicion_solar(df, lat=40.4168, lon=-3.7038):
 
 
 # -----------------------------
-# Normalización SIN leakage
+# Normalization WITHOUT leakage
 # -----------------------------
 def fit_stats(train_df):
-    # columnas continuas (NO binarias ni cíclicas)
+    # Continuous columns (NOT binary nor cyclic)
     numeric_cols = []
     for c in train_df.columns:
-        
-
-        # no normalizar binarias
+        # do not normalize binary
         if train_df[c].dropna().isin([0, 1]).all():
             continue
 
-        # no normalizar sin/cos
+        # do not normalize sin/cos
         if c.endswith("_sin") or c.endswith("_cos"):
             continue
 
@@ -273,13 +262,12 @@ def fit_stats(train_df):
     return numeric_cols, mu, std
 
 
-
 def apply_stats(df: pd.DataFrame, numeric_cols, mu, std):
     df = df.copy()
     df[numeric_cols] = (df[numeric_cols] - mu) / std
     return df
 
-def cargar_stats(out_dir=OUT_DIR, filename="stats.pkl"):
+def load_stats(out_dir=OUT_DIR, filename="stats.pkl"):
     with open(Path(out_dir) / filename, "rb") as f:
         stats = pickle.load(f)
 
@@ -294,246 +282,209 @@ def cargar_stats(out_dir=OUT_DIR, filename="stats.pkl"):
 
 
 # -----------------------------
-# Preparación X e Y
+# X and Y Preparation
 # -----------------------------
-def preparar_x_df(x_df, tz_destino=None, valor_weather_nulo="desconocido"):
+def prepare_x_df(x_df, target_tz=None, null_weather_val="unknown"):
     x_df = x_df.copy()
 
-    latitud_real = x_df['lat'].iloc[0]
-    longitud_real = x_df['lon'].iloc[0]
-    print(f"Usando latitud: {latitud_real}, longitud: {longitud_real} para cálculo solar.")
+    real_lat = x_df['lat'].iloc[0]
+    real_lon = x_df['lon'].iloc[0]
+    print(f"Using latitude: {real_lat}, longitude: {real_lon} for solar calculation.")
 
-    x_df = rellenar_weather_description(x_df, valor=valor_weather_nulo)
+    x_df = fill_weather_description(x_df, value=null_weather_val)
+    x_df = factorize_weather_description(x_df, col="weather_description", sort=True)
     
-    x_df = factorizar_weather_description(x_df, col="weather_description", sort=True)
     # parse datetime
-    x_df = parsear_dt_iso_16(x_df, tz_destino=tz_destino)
-    
-    x_df = eliminar_fechas_invalidas(x_df, col="dt_iso")
-
-    x_df = ordenar_y_indexar_por_fecha(x_df, col="dt_iso")
+    x_df = parse_dt_iso_16(x_df, target_tz=target_tz)
+    x_df = delete_invalid_dates(x_df, col="dt_iso")
+    x_df = sort_and_index_by_date(x_df, col="dt_iso")
 
     if x_df.index.duplicated().any():
-        print(f"⚠️ Se detectaron {x_df.index.duplicated().sum()} filas duplicadas. Eliminando...")
+        print(f"⚠️ Detected {x_df.index.duplicated().sum()} duplicate rows. Removing...")
         x_df = x_df[~x_df.index.duplicated(keep='first')]
     
-    # Cálculo de posición solar (Ajusta lat/lon a tu ubicación real)
-    x_df = anadir_posicion_solar(x_df, lat=latitud_real, lon=longitud_real)
+    # Solar position
+    x_df = add_solar_position(x_df, lat=real_lat, lon=real_lon)
     
-    # features circulares (tus fórmulas)
-    x_df = extraer_features_circulares(x_df, col_dt=None)
+    # cyclic features
+    x_df = extract_circular_features(x_df, dt_col=None)
     
-    # eliminar columnas no informativas
-    x_df = eliminar_columnas_no_informativas(x_df, cols_a_eliminar=["lat", "lon"])
+    # delete non informative
+    x_df = delete_non_informative_columns(x_df, cols_to_delete=["lat", "lon"])
 
     # NA
     x_df = replace_na(x_df, "rain_1h")
     
     return x_df
 
-def split_por_indices(df, train_frac=0.7, val_frac=0.15):
-    df = df.copy()
-    n = len(df)
 
-    train_end = int(n * train_frac)
-    val_end   = int(n * (train_frac + val_frac))
-
-    train = df.iloc[:train_end]
-    val   = df.iloc[train_end:val_end]
-    test  = df.iloc[val_end:]
-
+def split_data(x_df, train_frac=0.8, val_frac=0.10):
+    train, val, test = split_by_indices(x_df, train_frac=train_frac, val_frac=val_frac)
     return train, val, test
 
 
-
-def dividir(x_df, train_frac=0.8, val_frac=0.10):
-    # split por índices (temporal)
-    train, val, test = split_por_indices(x_df, train_frac=train_frac, val_frac=val_frac)
-    return train, val, test
-
-
-
-def normalizar_df(train, val, test, quitar_tz_excel=True):
-     # normalización sin leakage (fit en train)
+def normalize_df(train, val, test, remove_tz_excel=True):
+    # normalize without leakage
     numeric_cols, mu, std = fit_stats(train)
     train = apply_stats(train, numeric_cols, mu, std)
     val   = apply_stats(val, numeric_cols, mu, std)
     test  = apply_stats(test, numeric_cols, mu, std)
 
-    if quitar_tz_excel:
-        train = quitar_timezone_indice(train)
-        val   = quitar_timezone_indice(val)
-        test  = quitar_timezone_indice(test)
+    if remove_tz_excel:
+        train = remove_index_timezone(train)
+        val   = remove_index_timezone(val)
+        test  = remove_index_timezone(test)
     return train, val, test 
 
-def dividir_x_normalizar_df(x_df, train_frac=0.7, val_frac=0.15, quitar_tz_excel=True):
-    # split por índices (temporal)
-    train, val, test = split_por_indices(x_df, train_frac=train_frac, val_frac=val_frac)
+def split_x_and_normalize_df(x_df, train_frac=0.7, val_frac=0.15, remove_tz_excel=True):
+    train, val, test = split_by_indices(x_df, train_frac=train_frac, val_frac=val_frac)
 
-    # normalización sin leakage (fit en train)
     numeric_cols, mu, std = fit_stats(train)
     train = apply_stats(train, numeric_cols, mu, std)
     val   = apply_stats(val, numeric_cols, mu, std)
     test  = apply_stats(test, numeric_cols, mu, std)
 
-    if quitar_tz_excel:
-        train = quitar_timezone_indice(train)
-        val   = quitar_timezone_indice(val)
-        test  = quitar_timezone_indice(test)
+    if remove_tz_excel:
+        train = remove_index_timezone(train)
+        val   = remove_index_timezone(val)
+        test  = remove_index_timezone(test)
     return train, val, test
 
 
-def normalizar_df(x_df, numeric_cols, mu, std, quitar_tz_excel=True):
-    # split por índices (temporal)
-    # normalización sin leakage (fit en train)
+def normalize_single_df(x_df, numeric_cols, mu, std, remove_tz_excel=True):
     x_df = apply_stats(x_df, numeric_cols, mu, std)
-    if quitar_tz_excel:
-        x_df = quitar_timezone_indice(x_df)
+    if remove_tz_excel:
+        x_df = remove_index_timezone(x_df)
     return x_df
 
-def preparar_y_df(y_df):
+def prepare_y_df(y_df):
     """
-    Mantengo tu idea: renombrar columnas.
-    Ajusta si tus nombres reales son distintos.
+    Rename columns and prepare index.
     """
     y_df = y_df.copy()
     y_df = y_df.rename(columns={'Max kWp':'dt_iso', 82.41:'Energy'})
 
-    # parse fecha
+    # date parse
     y_df["dt_iso"] = pd.to_datetime(y_df["dt_iso"], errors="coerce")
     y_df = y_df.dropna(subset=["dt_iso"])
 
-    # ordenar e indexar
-    y_df = ordenar_y_indexar_por_fecha(y_df, col="dt_iso")
+    # sort and index
+    y_df = sort_and_index_by_date(y_df, col="dt_iso")
     return y_df
 
 
-def normalizar_indice_horario(df):
+def normalize_hourly_index(df):
     df = df.copy()
     df.index = pd.to_datetime(df.index).dt.floor("H")
     return df
 
 
-def dividir(y_df, train_frac=0.8, val_frac=0.10):
-    train, val, test = split_por_indices(y_df, train_frac=train_frac, val_frac=val_frac)
+def split_y(y_df, train_frac=0.8, val_frac=0.10):
+    train, val, test = split_by_indices(y_df, train_frac=train_frac, val_frac=val_frac)
     return train, val, test
 
 
+def split_y_and_normalize_df(y_df, train_frac=0.7, val_frac=0.15):
+    train, val, test = split_by_indices(y_df, train_frac=train_frac, val_frac=val_frac)
 
-def dividir_y_normalizar_df(y_df, train_frac=0.7, val_frac=0.15):
-    # split temporal
-    train, val, test = split_por_indices(y_df, train_frac=train_frac, val_frac=val_frac)
-
-    
     numeric_cols, mu, std = fit_stats(train)
     train = apply_stats(train, numeric_cols, mu, std)
     val   = apply_stats(val, numeric_cols, mu, std)
     test  = apply_stats(test, numeric_cols, mu, std)
 
-    train = quitar_timezone_indice(train)
-    val   = quitar_timezone_indice(val)
-    test  = quitar_timezone_indice(test)
+    train = remove_index_timezone(train)
+    val   = remove_index_timezone(val)
+    test  = remove_index_timezone(test)
 
     return train, val, test
 
 def pipeline():
     OUT_DIR.mkdir(parents=True, exist_ok=True)
 
-    # cargar raw
-    x_df_0 = cargar_excel(ruta_x, hoja=0)
-    y_df_0 = cargar_excel(ruta_y, hoja=0)
-    x_df_1 = cargar_excel(ruta_x, hoja=1)
-    y_df_1 = cargar_excel(ruta_y, hoja=1)
+    # load raw
+    x_df_0 = load_excel(x_path, sheet=0)
+    y_df_0 = load_excel(y_path, sheet=0)
+    x_df_1 = load_excel(x_path, sheet=1)
+    y_df_1 = load_excel(y_path, sheet=1)
 
     x_df = pd.concat([x_df_0, x_df_1], axis=0)
     y_df = pd.concat([y_df_0, y_df_1], axis=0)
 
-    # preparar por separado
-    x_df = preparar_x_df(x_df)
-    y_df = preparar_y_df(y_df)
+    # prepare separately
+    x_df = prepare_x_df(x_df)
+    y_df = prepare_y_df(y_df)
 
     # ==================================================
-    # ============ MASE SCALE (SERIE REAL) ==============
+    # ============ MASE SCALE (REAL SERIES) ==============
     # ==================================================
     y_energy_real = y_df["Energy"].values
 
-    m = 24  # estacionalidad diaria (horaria)
+    m = 24  # daily seasonality (hourly)
     naive_diff = np.abs(y_energy_real[m:] - y_energy_real[:-m])
     mase_scale = np.mean(naive_diff)
 
     print(f"MASE scale (real series): {mase_scale:.4f}")
 
-
-    # alinear por tiempo
+    # Align by time
     x_df, y_df = x_df.align(y_df, join="inner", axis=0)
 
     # split X
-
-    x_train, x_val, x_test = dividir(x_df, train_frac=0.8, val_frac=0.10)
+    x_train, x_val, x_test = split_data(x_df, train_frac=0.8, val_frac=0.10)
     x_cols, x_mu, x_std = fit_stats(x_train)
-    x_train = normalizar_df(x_train, x_cols, x_mu, x_std, quitar_tz_excel=True)
-    x_val = normalizar_df(x_val, x_cols, x_mu, x_std, quitar_tz_excel=True)
-    x_test = normalizar_df(x_test, x_cols, x_mu, x_std, quitar_tz_excel=True)
+    x_train = normalize_single_df(x_train, x_cols, x_mu, x_std, remove_tz_excel=True)
+    x_val = normalize_single_df(x_val, x_cols, x_mu, x_std, remove_tz_excel=True)
+    x_test = normalize_single_df(x_test, x_cols, x_mu, x_std, remove_tz_excel=True)
     
-    y_train, y_val, y_test = dividir(y_df, train_frac=0.8, val_frac=0.10)
+    # split Y
+    y_train, y_val, y_test = split_data(y_df, train_frac=0.8, val_frac=0.10)
     y_cols, y_mu, y_std = fit_stats(y_train)
-    y_train = normalizar_df(y_train, y_cols, y_mu, y_std,quitar_tz_excel=True)
-    y_val = normalizar_df(y_val, y_cols, y_mu, y_std,quitar_tz_excel=True)
-    y_test =  normalizar_df(y_test, y_cols, y_mu, y_std,quitar_tz_excel=True)
+    y_train = normalize_single_df(y_train, y_cols, y_mu, y_std, remove_tz_excel=True)
+    y_val = normalize_single_df(y_val, y_cols, y_mu, y_std, remove_tz_excel=True)
+    y_test = normalize_single_df(y_test, y_cols, y_mu, y_std, remove_tz_excel=True)
 
-    # unir X e Y
-    train = unir_x_y(x_train, y_train)
-    val   = unir_x_y(x_val, y_val)
-    test  = unir_x_y(x_test, y_test)
+    # Join X and Y
+    train = join_x_y(x_train, y_train)
+    val   = join_x_y(x_val, y_val)
+    test  = join_x_y(x_test, y_test)
 
-
-    # guardar conjuntos
+    # save sets
     save_joint_splits(train, val, test, OUT_DIR)
     print("Train:", train.shape)
     print("Val:", val.shape)
     print("Test:", test.shape)
     
-
-
-    print("\n--- Iniciando Normalización de Inferencia ---")
+    print("\n--- Starting Inference Normalization ---")
     
-    # 1. Cargar datos brutos de la hoja de inferencia
-    x_df_2 = cargar_excel(ruta_x, hoja=2)
-    y_df_2 = cargar_excel(ruta_y, hoja=2)
+    # 1. Load raw data for inference
+    x_df_2 = load_excel(x_path, sheet=2)
+    y_df_2 = load_excel(y_path, sheet=2)
 
-    # 2. Preprocesamiento (Cálculo de senos/cosenos, limpieza de columnas)
-    x_df_inf = preparar_x_df(x_df_2)
-    y_df_inf = preparar_y_df(y_df_2)
+    # 2. Preprocessing
+    x_df_inf = prepare_x_df(x_df_2)
+    y_df_inf = prepare_y_df(y_df_2)
 
-    # 3. Alineación temporal
-    x_df_inf = normalizar_dt_df(x_df_inf)
-    y_df_inf = normalizar_dt_df(y_df_inf)
+    # 3. Temporal alignment
+    x_df_inf = normalize_dt_df(x_df_inf)
+    y_df_inf = normalize_dt_df(y_df_inf)
     x_df_inf, y_df_inf = x_df_inf.align(y_df_inf, join="inner", axis=0)
 
-    # 5. NORMALIZAR X (Variables de entrada: Temperatura, nubes, etc.)
-    # Aquí es donde fallaba: aplicamos las stats de entrenamiento a x_df_inf
+    # 5. Normalize X
     x_df_inf = apply_stats(x_df_inf, x_cols, x_mu, x_std)
     
-    # 6. NORMALIZAR Y (Variable objetivo: Energía)
-    # Paso A: Logaritmo (porque el entrenamiento se hizo sobre logaritmos)
-    # Paso B: Z-Score con medias de entrenamiento
+    # 6. Normalize Y
     y_df_inf = apply_stats(y_df_inf, y_cols, y_mu, y_std)
 
-    # 7. Quitar Timezone para exportar a Excel
-    x_df_inf = quitar_timezone_indice(x_df_inf)
-    y_df_inf = quitar_timezone_indice(y_df_inf)
+    # 7. Remove Timezone
+    x_df_inf = remove_index_timezone(x_df_inf)
+    y_df_inf = remove_index_timezone(y_df_inf)
 
-    # 8. Unir y Guardar
-    inference = unir_x_y(x_df_inf, y_df_inf)
+    # 8. Join and Save
+    inference = join_x_y(x_df_inf, y_df_inf)
     inference.to_excel(OUT_DIR / "inference.xlsx", index=True)
-        # ==================================================
-    # ============ GUARDAR STATS PARA INFERENCE =========
+
     # ==================================================
-
-    # y_train está estandarizada → volver a escala REAL
-    
-
-    
+    # ============ SAVE STATS FOR INFERENCE =========
+    # ==================================================
 
     stats = {
         "X": {
@@ -555,11 +506,10 @@ def pipeline():
     with open(OUT_DIR / "stats.pkl", "wb") as f:
         pickle.dump(stats, f)
 
-    print("stats.pkl guardado correctamente en data/Processed/")
-
-    print("Variables de X e Y normalizadas con éxito.")
-    print("Columnas procesadas en X:", x_cols)
-    print("Ejemplo de valores en X (deberían estar cerca de 0):")
+    print("stats.pkl saved successfully in data/Processed/")
+    print("X and Y variables normalized successfully.")
+    print("Processed columns in X:", x_cols)
+    print("Example values in X (should be near 0):")
     print(x_df_inf[x_cols].head(3))
 
 

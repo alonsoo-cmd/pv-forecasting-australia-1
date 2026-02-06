@@ -8,7 +8,6 @@ import numpy as np
 import pandas as pd
 from pathlib import Path
 from torch.utils.data import Dataset, DataLoader
-from pathlib import Path
 
 from utils.graph_pipeline import (
     plot_continuous_horizon0,
@@ -21,15 +20,15 @@ from models.GRU import GRU_two_layers
 from models.LSTM_FCN import LSTM_FCN
 
 # ======================================================
-# ===============      DATASET        ==================
+# ===============        DATASET        ================
 # ======================================================
 
 class TimeSeriesDataset(Dataset):
     """
-    Dataset para forecasting con:
-    - ventana de pasado (length)
+    Dataset for forecasting with:
+    - lookback window (length)
     - lag
-    - horizonte futuro (output_window)
+    - future horizon (output_window)
     """
 
     def __init__(
@@ -41,7 +40,7 @@ class TimeSeriesDataset(Dataset):
         output_window: int,
         stride: int = 1,
     ):
-        assert len(X) == len(y), "X e y deben tener la misma longitud"
+        assert len(X) == len(y), "X and y must have the same length"
 
         self.X = torch.tensor(X, dtype=torch.float32)
         self.y = torch.tensor(y, dtype=torch.float32)
@@ -54,9 +53,9 @@ class TimeSeriesDataset(Dataset):
         self.output_window = output_window
         self.stride = stride
 
-        N = len(X)
+        n_samples = len(X)
         t0_min = lag + length
-        t0_max = N - output_window
+        t0_max = n_samples - output_window
 
         self.forecast_starts = np.arange(t0_min, t0_max + 1, stride)
 
@@ -73,13 +72,13 @@ class TimeSeriesDataset(Dataset):
 
 
 # ======================================================
-# ===============      TRAINING        =================
+# ===============       TRAINING        =================
 # ======================================================
 
-def training_model(model, dataloader, num_epochs, learning_rate, device):
+def train_model(model, dataloader, num_epochs, learning_rate, device):
     model.to(device)
     criterion = nn.L1Loss()
-    optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate,weight_decay=1e-4)
+    optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate, weight_decay=1e-4)
 
     for epoch in range(num_epochs):
         model.train()
@@ -103,7 +102,7 @@ def training_model(model, dataloader, num_epochs, learning_rate, device):
 
 
 # ======================================================
-# ===============      EVALUATE        =================
+# ===============       EVALUATE        =================
 # ======================================================
 
 def evaluate_model(model, dataloader, device):
@@ -138,7 +137,7 @@ def evaluate_model(model, dataloader, device):
 
 
 # ======================================================
-# ===============      METRICS        ==================
+# ===============        METRICS        ==================
 # ======================================================
 
 def mase(y_true, y_pred, y_train, m=24):
@@ -148,7 +147,7 @@ def mase(y_true, y_pred, y_train, m=24):
 
 
 # ======================================================
-# ===============      IO UTILS       ==================
+# ===============       IO UTILS        ==================
 # ======================================================
 
 def load_split(name, base_path, y_col="Energy"):
@@ -161,18 +160,18 @@ def load_split(name, base_path, y_col="Energy"):
 
 
 # ======================================================
-# ===============      MAIN          ===================
+# ===============         MAIN          ===================
 # ======================================================
 
 CONFIG_PATH = "./config/timeseries.yaml"
 DATA_PATH = "./data/Processed"
-DRIVE_BASE_PATH = Path("/content/drive/MyDrive/Proyecto_IA")
+DRIVE_BASE_PATH = Path("/content/drive/MyDrive/IA_Project")
 CHECKPOINT_DIR = DRIVE_BASE_PATH / "checkpoints"
 
-training_model_exexution = True
+run_model_training = True
 
 
-def training():
+def main():
     # --------------------------------------------------
     # Config & device
     # --------------------------------------------------
@@ -220,10 +219,10 @@ def training():
     # --------------------------------------------------
     MODEL_ZOO = {
         "LSTM": lambda: LSTM_two_layers(
-            input_size, hidden_size, output_size, dropout = 0.25
+            input_size, hidden_size, output_size, dropout=0.25
         ),
         "GRU": lambda: GRU_two_layers(
-            input_size, hidden_size, output_size, dropout = 0.15
+            input_size, hidden_size, output_size, dropout=0.15
         ),
         "LSTM_FCN": lambda: LSTM_FCN(
             input_size=input_size,
@@ -248,8 +247,8 @@ def training():
 
         model = model_fn().to(device)
 
-        if training_model_exexution:
-            training_model(
+        if run_model_training:
+            train_model(
                 model,
                 dl_train,
                 num_epochs=num_epochs,
@@ -283,9 +282,8 @@ def training():
     # SAVE BEST MODEL
     # --------------------------------------------------
     best_model_path = CHECKPOINT_DIR / f"best_model_{best_model_name}.pt"
-    print(f"📁 Guardando el mejor modelo en: {best_model_path}")
+    print(f"📁 Saving the best model to: {best_model_path}")
 
-    # 4. Guardar el diccionario en la ruta de Drive
     torch.save(
         {
             "model_name": best_model_name,
@@ -296,7 +294,7 @@ def training():
         best_model_path,
     )
 
-    print(f"✅ Modelo guardado exitosamente en Drive: {best_model_path}")
+    print(f"✅ Model successfully saved to Drive: {best_model_path}")
 
     # --------------------------------------------------
     # TEST (BEST MODEL ONLY)
@@ -343,4 +341,4 @@ def training():
 
 
 if __name__ == "__main__":
-    training()
+    main()
