@@ -313,9 +313,6 @@ def main():
     y_mu = stats["Y"]["mu"]["Energy"]
     y_std = stats["Y"]["std"]["Energy"]
 
-    print(f"DEBUG: mu={y_mu}, std={y_std}") 
-    print("Ckecking for zero std:", y_std)
-
     test_preds_real = (test_preds * y_std) + y_mu
     test_targets_real = (test_targets * y_std) + y_mu
 
@@ -343,21 +340,9 @@ def main():
     # --------------------------------------------------
     # GRAPHS
     # --------------------------------------------------
-    plt.figure(figsize=(14, 4))
-    plot_continuous_horizon0(
-        test_targets_real,
-        test_preds_real,
-        start_idx=0,
-        n_days=10,
-    )
-    plt.show()
 
     plt.figure(figsize=(6, 6))
     plot_one_day(test_targets_real, test_preds_real, day_idx=20)
-    plt.show()
-
-    plt.figure(figsize=(6, 6))
-    plot_scatter_real_vs_pred(test_targets_real, test_preds_real)
     plt.show()
 
     return best_model_path
