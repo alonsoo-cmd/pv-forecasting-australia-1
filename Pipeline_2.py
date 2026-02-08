@@ -310,14 +310,16 @@ def main():
     with open(f"{DATA_PATH}/stats.pkl", "rb") as f:
         stats = pickle.load(f)
 
-    # Asegúrate de que estas llaves existan y no sean 0
     y_mu = stats["Y"]["mu"]["Energy"]
     y_std = stats["Y"]["std"]["Energy"]
 
-    print(f"DEBUG: mu={y_mu}, std={y_std}") # Si std es muy pequeño, aquí está el error
+    print(f"DEBUG: mu={y_mu}, std={y_std}") 
+    print("Ckecking for zero std:", y_std)
 
     test_preds_real = (test_preds * y_std) + y_mu
     test_targets_real = (test_targets * y_std) + y_mu
+
+    train_y_real = (train_y * y_std) + y_mu
 
     # Validar varianza
     if np.var(test_targets_real) < 1e-6:
