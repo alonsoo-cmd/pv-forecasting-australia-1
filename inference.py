@@ -8,6 +8,7 @@ import os
 import pickle
 from pathlib import Path
 from torch.utils.data import DataLoader
+import matplotlib.pyplot as plt
 
 import Pipeline_2 as Pipeline
 
@@ -187,11 +188,14 @@ def run_inference(best_model_path=None):
     
     if len(day_real) == 24:
         plot_one_day(day_real, day_pred, day_idx=10)
+        plt.show()
     else:
         print("Not enough data to plot 24h")
     
     plot_continuous_horizon0(targets_real, preds_real, start_idx=0, n_days=7)
+    plt.show()
     plot_scatter_real_vs_pred(targets_real, preds_real)
+    plt.show()
 
     # --- SAVE OUTPUT ---
     df = pd.DataFrame(preds_real, columns=[f"h_{i}" for i in range(preds_real.shape[1])])
