@@ -13,9 +13,7 @@ import matplotlib.pyplot as plt
 import pickle
 
 from utils.graph_pipeline import (
-    plot_continuous_horizon0,
     plot_one_day,
-    plot_scatter_real_vs_pred,
 )
 
 from models.LSTM import LSTM_two_layers
@@ -198,7 +196,6 @@ def main():
     hidden_size = config["model"]["hidden_size"]
     output_window = config["model"]["output_window"]
     output_size = config["model"]["output_size"]
-    dropout = config["model"]["dropout"]
 
     batch_size = config["model"]["batch_size"]
     num_epochs = config["model"]["epochs"]
