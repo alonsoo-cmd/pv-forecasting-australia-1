@@ -187,13 +187,16 @@ def run_inference(best_model_path=None):
     day_pred = preds_real[0:24].flatten()
     
     if len(day_real) == 24:
+        plt.figure(figsize=(12, 4))
         plot_one_day(day_real, day_pred, day_idx=10)
         plt.show()
     else:
         print("Not enough data to plot 24h")
     
+    plt.figure(figsize=(14, 4))
     plot_continuous_horizon0(targets_real, preds_real, start_idx=0, n_days=7)
     plt.show()
+    plt.figure(figsize=(6, 6))
     plot_scatter_real_vs_pred(targets_real, preds_real)
     plt.show()
 
