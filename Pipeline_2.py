@@ -46,7 +46,7 @@ class TimeSeriesDataset(Dataset):
         assert len(X) == len(y), "X and y must have the same length"
 
         self.X = torch.tensor(X, dtype=torch.float32)
-        self.y = torch.tensor(y, dtype=torch.float32)
+        self.y = torch.tensor(y, dtype=torch.float32).view(-1, 1)
 
         if self.y.ndim == 2:
             self.y = self.y.squeeze(-1)
@@ -306,18 +306,22 @@ def main():
         best_model, dl_test, device
     )
 
-    with open("./data/Processed/stats.pkl", "rb") as f:
+    # --- DE-NORMALIZE ---
+    with open(f"{DATA_PATH}/stats.pkl", "rb") as f:
         stats = pickle.load(f)
 
+    # Asegúrate de que estas llaves existan y no sean 0
     y_mu = stats["Y"]["mu"]["Energy"]
     y_std = stats["Y"]["std"]["Energy"]
 
-    # 2. En la sección de TEST, cambia expm1 por la des-normalización lineal
+    print(f"DEBUG: mu={y_mu}, std={y_std}") # Si std es muy pequeño, aquí está el error
+
     test_preds_real = (test_preds * y_std) + y_mu
     test_targets_real = (test_targets * y_std) + y_mu
 
-    # Haz lo mismo para train_y si lo usas para el MASE
-    train_y_real = (train_y * y_std) + y_mu
+    # Validar varianza
+    if np.var(test_targets_real) < 1e-6:
+        print("ALERT: Real data has no variability. Check the inference.xlsx file")
 
     mae_test_h0 = np.mean(
         np.abs(test_preds_real[:, 0] - test_targets_real[:, 0])
