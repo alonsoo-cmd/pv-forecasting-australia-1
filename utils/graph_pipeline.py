@@ -15,11 +15,6 @@ def plot_continuous_horizon0(
     y_true = np.asarray(y_true).flatten()
     y_pred = np.asarray(y_pred).flatten()
 
-    if y_true.ndim == 2:
-        y_true = y_true[:, 0]
-    if y_pred.ndim == 2:
-        y_pred = y_pred[:, 0]
-
     n_hours = n_days * 24
     end = start_idx + n_hours
 
