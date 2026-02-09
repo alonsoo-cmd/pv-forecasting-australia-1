@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 def plot_continuous_horizon0(
     y_true,
     y_pred,
-    start_idx=1680,
+    start_idx=2520,
     n_days=7,
     title=None
 ):
@@ -14,6 +14,7 @@ def plot_continuous_horizon0(
     """
     y_true = np.asarray(y_true)
     y_pred = np.asarray(y_pred)
+    print("Checking commit")
 
     if y_true.ndim == 2:
         y_true = y_true[:, 0]
