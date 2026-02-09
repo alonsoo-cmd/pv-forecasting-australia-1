@@ -25,7 +25,7 @@ def plot_continuous_horizon0(
         print(f"Error: The start_idx {start_idx} is out of the data range.")
         return
 
-    x = np.arange(len(y_true))
+    x = np.arange(len(slice_true))
 
     plt.figure(figsize=(14, 4))
     plt.plot(x, slice_true, label="Actual", linewidth=2, color="royalblue")
