@@ -207,8 +207,7 @@ def run_inference(best_model_path=None):
     df.to_excel(out_path, index=False)
 
     print(f"\n✅ Inference saved to: {out_path}")
-    print("Checking commit")
-
+    
 if __name__ == "__main__":
     # Note: Ensure Pipeline.training() is also renamed in the imported script
     best_model_path = Pipeline.main() 
