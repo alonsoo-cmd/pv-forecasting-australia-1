@@ -5,7 +5,7 @@ def plot_continuous_horizon0(
     y_true,
     y_pred,
     start_idx=11,
-    n_days=7,
+    n_days=4,
     title=None
 ):
     """
