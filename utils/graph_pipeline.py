@@ -34,7 +34,7 @@ def plot_continuous_horizon0(
 
     plt.xlabel("Hours")
     plt.ylabel("Energy (kWh)")
-    plt.title(title or f"Continuous Prediction horizon=0 ({n_days} days)")
+    plt.title(title or f"Results horizon=0 ({n_days} days)")
     plt.legend()
     plt.grid(True, alpha=0.3)
     plt.tight_layout()
