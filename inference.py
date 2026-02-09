@@ -194,7 +194,7 @@ def run_inference(best_model_path=None):
         print("Not enough data to plot 24h")
     
     plt.figure(figsize=(14, 4))
-    plot_continuous_horizon0(targets_real, preds_real, start_idx=840, n_days=7)
+    plot_continuous_horizon0(targets_real, preds_real, start_idx=1680, n_days=7)
     plt.show()
     plt.figure(figsize=(6, 6))
     plot_scatter_real_vs_pred(targets_real, preds_real)
@@ -207,7 +207,7 @@ def run_inference(best_model_path=None):
     df.to_excel(out_path, index=False)
 
     print(f"\n✅ Inference saved to: {out_path}")
-    
+
 if __name__ == "__main__":
     # Note: Ensure Pipeline.training() is also renamed in the imported script
     best_model_path = Pipeline.main() 
