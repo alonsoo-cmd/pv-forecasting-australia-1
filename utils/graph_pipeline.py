@@ -12,8 +12,8 @@ def plot_continuous_horizon0(
     Continuous series using ONLY horizon=0:
     y[t] vs yhat[t] where yhat[t] = preds[window_t][0]
     """
-    y_true = np.asarray(y_true)
-    y_pred = np.asarray(y_pred)
+    y_true = np.asarray(y_true).flatten()
+    y_pred = np.asarray(y_pred).flatten()
 
     if y_true.ndim == 2:
         y_true = y_true[:, 0]
@@ -23,14 +23,18 @@ def plot_continuous_horizon0(
     n_hours = n_days * 24
     end = start_idx + n_hours
 
-    y_true = y_true[start_idx:end]
-    y_pred = y_pred[start_idx:end]
+    slice_true = y_true[start_idx:end]
+    slice_pred = y_pred[start_idx:end]
+
+    if len(slice_true) == 0:
+        print(f"Error: The start_idx {start_idx} is out of the data range.")
+        return
 
     x = np.arange(len(y_true))
 
     plt.figure(figsize=(14, 4))
-    plt.plot(x, y_true, label="Actual", linewidth=2)
-    plt.plot(x, y_pred, "--", label="Predicted", linewidth=2)
+    plt.plot(x, slice_true, label="Actual", linewidth=2, color="royalblue")
+    plt.plot(x, slice_pred, "--", label="Predicted", linewidth=2, color="darkorange")
 
     plt.xlabel("Hours")
     plt.ylabel("Energy (kWh)")
