@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 def plot_continuous_horizon0(
     y_true,
     y_pred,
-    start_idx=2688,
+    start_idx=3360,
     n_days=7,
     title=None
 ):
